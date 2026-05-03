@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Sun, Moon } from 'lucide-react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { NotificationsProvider } from '../contexts/NotificationsContext';
 
@@ -18,6 +18,20 @@ function AppContent() {
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, isLoading, logout } = useAuth();
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const handleVideoClick = (videoId: number) => {
     setSelectedVideoId(videoId);
@@ -54,7 +68,16 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={() => setCurrentScreen('home')} />;
+    return (
+      <>
+        <div className="fixed top-4 right-4 z-[100]">
+          <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
+        </div>
+        <Login onLogin={() => setCurrentScreen('home')} />
+      </>
+    );
   }
 
   return (
@@ -82,9 +105,14 @@ function AppContent() {
               Buscar
             </Button>
           </div>
-          <Button onClick={handleLogout} variant="ghost" size="sm">
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} title="Alternar tema">
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+            <Button onClick={handleLogout} variant="ghost" size="sm">
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
       <main className="size-full">
