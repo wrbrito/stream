@@ -3,6 +3,12 @@
 vamos por partes
 sempre responder e pensar em portugues
 
+- após o login a pagina fica só carregando mas não carrega nada
+- sinto falta de um rodapé nas paginas...
+- a pagina principal depois do login poderia ter uma paginação também
+
+=======
+
 - [x] faça commit do que foi feito em portugues
 - [x] gere os links do Ajuda, Termos de Uso e Privacidade, lá na tela de login
 - [x] os videos em destaques poderia ser os mais assistidos? (ou há outra forma de medir um video para destaque?)

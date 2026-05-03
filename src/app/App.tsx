@@ -10,6 +10,7 @@ import { UploadVideo } from './components/UploadVideo';
 import { AdminPanel } from './components/AdminPanel';
 import { NotificationsPage } from './components/NotificationsPage';
 import { Button } from './components/Button';
+import { Footer } from './components/Footer';
 
 type Screen = 'login' | 'home' | 'video' | 'upload' | 'admin' | 'notifications';
 
@@ -82,6 +83,7 @@ function AppContent() {
 
   return (
     <>
+    <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
@@ -115,7 +117,7 @@ function AppContent() {
           </div>
         </div>
       </header>
-      <main className="size-full">
+      <main className="flex-1">
         {currentScreen === 'home' && (
           <Home
             onVideoClick={handleVideoClick}
@@ -143,6 +145,8 @@ function AppContent() {
           <NotificationsPage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
         )}
       </main>
+      <Footer />
+    </div>
     </>
   );
 }
