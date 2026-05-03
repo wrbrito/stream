@@ -1,0 +1,225 @@
+# Arquitetura do Sistema - Plataforma Escolar de Vídeos
+
+## Diagrama de Componentes
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      CAMADA FRONTEND (React/Vite)                   │
+│                                                                     │
+│  ┌──────────────┐  ┌───────────┐  ┌──────────────┐  ┌─────────┐  │
+│  │  Login Page  │  │ Home Page │  │ Upload Page  │  │  Admin  │  │
+│  └──────┬───────┘  └─────┬─────┘  └──────┬───────┘  └────┬────┘  │
+│         │                │               │              │        │
+│         └────────────────┼───────────────┴──────────────┘        │
+│                          │                                        │
+│                    api.ts (Service)                              │
+│               [Gestiona Token JWT + Fetch]                       │
+└──────────────────────────┬─────────────────────────────────────────┘
+                           │
+                   HTTP/JSON over REST
+                           │
+┌──────────────────────────▼─────────────────────────────────────────┐
+│                    CAMADA BACKEND (Express.js)                     │
+│                                                                    │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                      ROUTES (Express Router)                │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌─────────────┐  │ │
+│  │  │   /auth  │  │ /videos  │  │/categ..│  │   /admin    │  │ │
+│  │  └────┬─────┘  └────┬─────┘  └───┬────┘  └──────┬──────┘  │ │
+│  └───────┼─────────────┼────────────┼──────────────┼──────────┘ │
+│          │             │            │              │             │
+│  ┌───────▼─────────────▼────────────▼──────────────▼──────────┐ │
+│  │              MIDDLEWARES                                   │ │
+│  │  [Auth │ Roles │ Validation │ Error Handler │ Upload]     │ │
+│  └───────┬─────────────┬────────────┬──────────────┬──────────┘ │
+│          │             │            │              │             │
+│  ┌───────▼─────────────▼────────────▼──────────────▼──────────┐ │
+│  │           CONTROLLERS (Lógica de API)                      │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────────┐ │ │
+│  │  │  AUTH    │  │  VIDEOS  │  │CATEGOR │  │   ADMIN      │ │ │
+│  │  └────┬─────┘  └────┬─────┘  └───┬────┘  └──────┬───────┘ │ │
+│  └───────┼─────────────┼────────────┼──────────────┼──────────┘ │
+│          │             │            │              │             │
+│  ┌───────▼─────────────▼────────────▼──────────────▼──────────┐ │
+│  │           SERVICES (Lógica de Negócio)                     │ │
+│  │ ┌──────────┐ ┌────────────┐ ┌────────────────────────────┐ │ │
+│  │ │ Auth     │ │ Video      │ │ Processamento (FFmpeg+YT)  │ │ │
+│  │ │ Service  │ │ Service    │ │ Service                    │ │ │
+│  │ └────┬─────┘ └──────┬─────┘ └────────────┬───────────────┘ │ │
+│  └──────┼──────────────┼──────────────────────┼────────────────┘ │
+│         │              │                      │                  │
+│  ┌──────▼──────────────▼──────────────────────▼────────────────┐ │
+│  │        REPOSITORIES (Acesso ao Banco)                       │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐  │ │
+│  │  │ Usuario  │  │  Video   │  │ Categoria│  │Processamento  │ │
+│  │  │Repository│  │Repository│  │Repository│  │ Repository    │ │
+│  │  └────┬─────┘  └────┬─────┘  └────┬────┘  └────┬────────┘  │ │
+│  └───────┼─────────────┼────────────┼───────────┼──────────────┘ │
+│          │             │            │           │                │
+└──────────┼─────────────┼────────────┼───────────┼────────────────┘
+           │             │            │           │
+┌──────────▼─────────────▼────────────▼───────────▼────────────────┐
+│                 CAMADA DE DADOS (Prisma ORM)                     │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │          DATABASE (SQLite / PostgreSQL)                    │ │
+│  │  ┌─────────┐ ┌────────┐ ┌──────────┐ ┌──────────────────┐ │ │
+│  │  │ usuario │ │ video  │ │categoria │ │ processamento    │ │ │
+│  │  ├─────────┤ ├────────┤ ├──────────┤ ├──────────────────┤ │ │
+│  │  │ id      │ │ id     │ │ id       │ │ id               │ │ │
+│  │  │ email   │ │titulo  │ │ nome     │ │ videoId          │ │ │
+│  │  │ senha   │ │descr..│ │ slug     │ │ status           │ │ │
+│  │  │ perfil  │ │ autor  │ │          │ │ mensagem         │ │ │
+│  │  │ ativo   │ │ tipo   │ │          │ │ data             │ │ │
+│  │  └─────────┘ │ status │ │          │ └──────────────────┘ │ │
+│  │              │ categ..│ │          │                      │ │
+│  │              │ miniat.│ │          │ + Favoritos         │ │
+│  │              │ uploader│          │ + Visualizações     │ │
+│  │              └────────┘ │          │                      │ │
+│  │                        └──────────┘                        │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │         ARMAZENAMENTO DE ARQUIVOS (Storage)               │ │
+│  │  /uploads/videos/        - Vídeos processados             │ │
+│  │  /uploads/thumbnails/    - Miniaturas                     │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Fluxo de Upload de Vídeo
+
+```
+Usuário                    Frontend              Backend
+   │                         │                      │
+   │─[selecionar arquivo]──▶ │                      │
+   │                         │─[POST /videos form]─▶│
+   │                         │                      ├─[Validar]
+   │                         │                      │
+   │                         │                      ├─[FFmpeg: marca d'água]
+   │                         │                      │
+   │                         │                      ├─[Salvar em /storage]
+   │                         │                      │
+   │                         │                      ├─[Registrar BD]
+   │                         │◀─[201 + vídeo]──────┤
+   │                         │                      │
+   │◀─[Video adicionado]─────│                      │
+```
+
+## Fluxo de Importação de Vídeo do YouTube
+
+```
+Admin                      Frontend              Backend              YouTube
+   │                         │                      │                    │
+   │─[Clicar Importar]───────│                      │                    │
+   │                         │─[POST /videos/:id/importar]───────────────▶│
+   │                         │                      │                    │
+   │                         │                      ├─[ytdl-core]────────│
+   │                         │                      │◀─[Stream Video]────│
+   │                         │                      │
+   │                         │                      ├─[Salvar temp]
+   │                         │                      │
+   │                         │                      ├─[FFmpeg: marca d'água]
+   │                         │                      │
+   │                         │                      ├─[Salvar final]
+   │                         │                      │
+   │                         │◀─[200 OK]────────────│
+   │                         │                      │
+   │◀─[Vídeo importado]──────│                      │
+   │                         │                      │
+   │─[Acessar Vídeo]─────────│                      │
+   │                         │─[GET /videos/:id]────▶│
+   │                         │◀─[200 + dados internos]──│
+```
+
+## Fluxo de Autenticação
+
+```
+Usuário              Frontend                Backend
+   │                   │                        │
+   │─[Login]───────────│                        │
+   │                   │─[POST /auth/login]────▶│
+   │                   │  {email, senha}        │
+   │                   │                        ├─[buscar usuário]
+   │                   │                        │
+   │                   │                        ├─[bcrypt.compare]
+   │                   │                        │
+   │                   │                        ├─[jwt.sign]
+   │                   │◀─[200 + token + user]─│
+   │                   │                        │
+   │                   ├─[localStorage.setItem('token')]
+   │                   │
+   │─[Requisições]────▶│
+   │                   │─[Header: Authorization: Bearer token]
+   │                   │─────────────────────────▶│
+   │                   │                          ├─[jwt.verify]
+   │                   │                          │
+   │                   │                          ├─[Executar ação]
+   │                   │◀──────────────────────────│
+   │◀──────────────────│
+```
+
+## Estrutura de Resposta Padrão
+
+```json
+// Sucesso
+{
+  "sucesso": true,
+  "dados": {
+    "id": 1,
+    "titulo": "Vídeo",
+    ...
+  }
+}
+
+// Erro
+{
+  "sucesso": false,
+  "erro": "Mensagem de erro",
+  "detalhes": { ... }
+}
+```
+
+## Permissões por Perfil
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MATRIZ DE PERMISSÕES                     │
+├─────────────────┬───────────┬──────────┬──────────────┬──────┤
+│ Recurso         │   ADMIN   │PROFESSOR │ ALUNO        │PUBLIC│
+├─────────────────┼───────────┼──────────┼──────────────┼──────┤
+│Login            │     ✓     │    ✓     │  ✓           │  ✓  │
+│Logout           │     ✓     │    ✓     │  ✓           │  ✓  │
+│Listar Vídeos    │     ✓     │    ✓     │  ✓           │  ✓  │
+│Ver Detalhes     │     ✓     │    ✓     │  ✓           │  ✓  │
+│Criar Vídeo      │     ✓     │    ✓     │  ✗           │  ✗  │
+│Editar Vídeo     │     ✓     │    ✓*    │  ✗           │  ✗  │
+│Deletar Vídeo    │     ✓     │    ✗     │  ✗           │  ✗  │
+│Importar YT      │     ✓     │    ✗     │  ✗           │  ✗  │
+│CRUD Categorias  │     ✓     │    ✓*    │  ✗           │  ✗  │
+│Listar Usuários  │     ✓     │    ✗     │  ✗           │  ✗  │
+│Dashboard Admin  │     ✓     │    ✗     │  ✗           │  ✗  │
+└─────────────────┴───────────┴──────────┴──────────────┴──────┘
+
+* = Professor pode editar/deletar apenas seus próprios vídeos
+```
+
+## Stack de Segurança
+
+```
+┌──────────────────────────────────────────────────────┐
+│                CAMADA DE SEGURANÇA                  │
+│                                                      │
+│  Requisição HTTP                                    │
+│  ↓                                                  │
+│  ├─ CORS: Validação de origem                       │
+│  ├─ Body Parser: Limite de tamanho                  │
+│  ├─ Autenticação: Verificar JWT                     │
+│  ├─ Autorização: Validar perfil                     │
+│  ├─ Validação: Zod schemas                          │
+│  ├─ Upload: Validar tipo/tamanho de arquivo         │
+│  └─ Error Handler: Não expor detalhes internos      │
+│  ↓                                                  │
+│  Resposta com tratamento de erro                    │
+└──────────────────────────────────────────────────────┘
+```

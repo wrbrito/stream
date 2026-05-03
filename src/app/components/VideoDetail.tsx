@@ -1,0 +1,427 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Calendar, Eye, Flag, Heart, Share2, Video as VideoIcon } from 'lucide-react';
+import { Button } from './Button';
+import { api, tratarErroApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+
+interface VideoDetailProps {
+  onBack: () => void;
+  videoId: number;
+}
+
+interface ApiVideo {
+  id: number;
+  titulo: string;
+  descricao: string;
+  autor: string;
+  tipo: 'INTERNO' | 'YOUTUBE' | string;
+  status: string;
+  urlOriginal?: string | null;
+  caminhoArquivo?: string | null;
+  miniatura?: string | null;
+  criadoEm: string;
+  categoria?: {
+    nome?: string;
+  };
+  visualizacoes?: unknown[] | number;
+}
+
+function extrairYoutubeId(url?: string | null): string | null {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes('youtu.be')) {
+      return parsed.pathname.split('/').filter(Boolean)[0] ?? null;
+    }
+    if (parsed.pathname.startsWith('/shorts/')) {
+      return parsed.pathname.split('/').filter(Boolean)[1] ?? null;
+    }
+    if (parsed.pathname.startsWith('/embed/')) {
+      return parsed.pathname.split('/').filter(Boolean)[1] ?? null;
+    }
+    return parsed.searchParams.get('v');
+  } catch {
+    return null;
+  }
+}
+
+function formatarData(data: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(data));
+}
+
+function contarVisualizacoes(valor: ApiVideo['visualizacoes']) {
+  return Array.isArray(valor) ? valor.length : Number(valor ?? 0);
+}
+
+const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4000';
+
+export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
+  const { usuario } = useAuth();
+  const [video, setVideo] = useState<ApiVideo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isFavorito, setIsFavorito] = useState(false);
+  const [favoritoLoading, setFavoritoLoading] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [deletando, setDeletando] = useState(false);
+  const [formTitulo, setFormTitulo] = useState('');
+  const [formDescricao, setFormDescricao] = useState('');
+  const [globalConfigs, setGlobalConfigs] = useState<Record<string, string>>({});
+  const visualizacoesRegistradas = useRef(new Set<number>());
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarVideo() {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await api.videos.obterPorId(videoId);
+        if (ativo) {
+          const dados = response.dados as ApiVideo;
+          setVideo(dados);
+          setFormTitulo(dados.titulo);
+          setFormDescricao(dados.descricao);
+        }
+        const favoritoResponse = await api.videos.verificarFavorito(videoId);
+        if (ativo) {
+          setIsFavorito(Boolean((favoritoResponse.dados as { favorito?: boolean } | undefined)?.favorito));
+        }
+        if (!visualizacoesRegistradas.current.has(videoId)) {
+          visualizacoesRegistradas.current.add(videoId);
+          await api.videos.registrarVisualizacao(videoId).catch(() => null);
+          if (ativo) {
+            setVideo((atual) => {
+              if (!atual) {
+                return atual;
+              }
+
+              const totalAtual = contarVisualizacoes(atual.visualizacoes);
+              return { ...atual, visualizacoes: totalAtual + 1 };
+            });
+          }
+        }
+        const configResponse = await api.admin.listarConfiguracoes().catch(() => null);
+        if (ativo && configResponse?.sucesso && configResponse.dados) {
+          setGlobalConfigs(configResponse.dados as Record<string, string>);
+        }
+      } catch (erro) {
+        if (ativo) {
+          setError(tratarErroApi(erro));
+        }
+      } finally {
+        if (ativo) {
+          setLoading(false);
+        }
+      }
+    }
+
+    carregarVideo();
+
+    return () => {
+      ativo = false;
+    };
+  }, [videoId]);
+
+  const youtubeId = useMemo(() => extrairYoutubeId(video?.urlOriginal), [video?.urlOriginal]);
+  const videoSrc =
+    video?.tipo === 'YOUTUBE' && youtubeId
+      ? `https://www.youtube.com/embed/${youtubeId}`
+      : video?.caminhoArquivo
+        ? `${BASE_URL}${video.caminhoArquivo}`
+        : null;
+
+  const handleFavoritar = async () => {
+    try {
+      setFavoritoLoading(true);
+      if (isFavorito) {
+        await api.videos.desfavoritar(videoId);
+        setIsFavorito(false);
+        alert('Vídeo removido dos favoritos.');
+        return;
+      }
+      await api.videos.favoritar(videoId);
+      setIsFavorito(true);
+      alert('Vídeo adicionado aos favoritos.');
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    } finally {
+      setFavoritoLoading(false);
+    }
+  };
+
+  const handleDenunciar = async () => {
+    try {
+      await api.videos.denunciar(videoId);
+      alert('Obrigado. Sua denúncia foi enviada para a equipe administrativa.');
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    }
+  };
+
+  const handleCompartilhar = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: video?.titulo,
+          text: 'Confira este vídeo na plataforma escolar',
+          url: shareUrl,
+        });
+      } catch {
+        // Usuário cancelou
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link copiado para a área de transferência.');
+    } catch {
+      alert('Não foi possível compartilhar este vídeo no momento.');
+    }
+  };
+
+  const handleSalvarEdicao = async () => {
+    if (!video) return;
+    try {
+      setSalvandoEdicao(true);
+      await api.videos.atualizar(video.id, {
+        titulo: formTitulo.trim(),
+        descricao: formDescricao.trim(),
+      });
+      setVideo((atual) =>
+        atual
+          ? {
+              ...atual,
+              titulo: formTitulo.trim(),
+              descricao: formDescricao.trim(),
+            }
+          : atual
+      );
+      setEditando(false);
+      alert('Vídeo atualizado com sucesso.');
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    } finally {
+      setSalvandoEdicao(false);
+    }
+  };
+
+  const handleExcluirVideo = async () => {
+    if (!video) return;
+    const confirmar = window.confirm('Deseja realmente excluir este vídeo?');
+    if (!confirmar) return;
+    try {
+      setDeletando(true);
+      await api.videos.deletar(video.id);
+      alert('Vídeo excluído com sucesso.');
+      onBack();
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    } finally {
+      setDeletando(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando video...</p>
+      </div>
+    );
+  }
+
+  if (error || !video) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
+          <div className="container mx-auto px-4 py-4">
+            <Button variant="ghost" onClick={onBack}>
+              <ArrowLeft className="w-5 h-5" />
+              Voltar
+            </Button>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 py-16 text-center">
+          <VideoIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-xl font-semibold mb-2">Video nao encontrado</h1>
+          <p className="text-muted-foreground">{error || 'Nao foi possivel carregar este video.'}</p>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+            Voltar
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="bg-card rounded-xl overflow-hidden border border-border shadow-lg mb-6">
+              <div className="relative aspect-video bg-black">
+                {video.tipo === 'YOUTUBE' && videoSrc ? (
+                  <iframe
+                    src={videoSrc}
+                    title={video.titulo}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : videoSrc ? (
+                  <video src={videoSrc} className="w-full h-full" controls />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white">
+                    Arquivo de video indisponivel
+                  </div>
+                )}
+                {/* Marca d'água UI */}
+                {(() => {
+                  const pos = globalConfigs.WATERMARK_POSITION || 'BOTTOM_LEFT';
+                  const text = globalConfigs.WATERMARK_TEXT || 'PLATAFORMA ESCOLAR';
+                  
+                  let positionClasses = 'bottom-4 left-4';
+                  if (pos === 'TOP_LEFT') positionClasses = 'top-4 left-4';
+                  if (pos === 'TOP_RIGHT') positionClasses = 'top-4 right-4';
+                  if (pos === 'BOTTOM_RIGHT') positionClasses = 'bottom-4 right-4';
+                  if (pos === 'CENTER') positionClasses = 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
+
+                  return (
+                    <div className={`absolute ${positionClasses} pointer-events-none select-none z-10 opacity-60`}>
+                      <span className="bg-black/50 text-white px-2 py-1 rounded text-xs font-bold tracking-wider border border-white/20 whitespace-nowrap">
+                        {text.toUpperCase()}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-semibold text-foreground mb-2">{video.titulo}</h1>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      <span>{contarVisualizacoes(video.visualizacoes)} visualizacoes</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{formatarData(video.criadoEm)}</span>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-md text-xs font-medium ${
+                        video.tipo === 'YOUTUBE' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {video.tipo === 'YOUTUBE' ? 'YouTube' : 'Interno'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border flex-wrap">
+                <Button variant="outline" size="sm" onClick={handleFavoritar} disabled={favoritoLoading}>
+                  <Heart className="w-4 h-4" />
+                  {isFavorito ? 'Desfavoritar' : 'Favoritar'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleCompartilhar}>
+                  <Share2 className="w-4 h-4" />
+                  Compartilhar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleDenunciar}>
+                  <Flag className="w-4 h-4" />
+                  Denunciar
+                </Button>
+                {usuario?.perfil === 'ADMIN' && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => setEditando((valor) => !valor)}>
+                      {editando ? 'Cancelar edição' : 'Editar vídeo'}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={handleExcluirVideo} disabled={deletando}>
+                      {deletando ? 'Excluindo...' : 'Excluir vídeo'}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {editando && (
+                <div className="mb-6 p-4 border border-border rounded-lg bg-muted/30">
+                  <label className="block text-sm font-medium mb-2">Título</label>
+                  <input
+                    value={formTitulo}
+                    onChange={(e) => setFormTitulo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-border bg-input-background mb-3"
+                  />
+                  <label className="block text-sm font-medium mb-2">Descrição</label>
+                  <textarea
+                    value={formDescricao}
+                    onChange={(e) => setFormDescricao(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 rounded-md border border-border bg-input-background mb-3"
+                  />
+                  <Button onClick={handleSalvarEdicao} disabled={salvandoEdicao}>
+                    {salvandoEdicao ? 'Salvando...' : 'Salvar alterações'}
+                  </Button>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                    {video.autor
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">{video.autor}</h3>
+                    <p className="text-sm text-muted-foreground">Autor do video</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-foreground mb-2">Descricao</h3>
+                <p className="text-muted-foreground leading-relaxed">{video.descricao}</p>
+              </div>
+
+              <div className="mt-4">
+                <span className="inline-block px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-sm">
+                  {video.categoria?.nome ?? 'Outros'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <aside className="lg:col-span-1">
+            <div className="bg-card rounded-xl border border-border p-6 shadow-sm sticky top-24">
+              <h3 className="font-medium text-foreground mb-2">Detalhes</h3>
+              <p className="text-sm text-muted-foreground">
+                Este video foi carregado diretamente da API usando o ID {video.id}.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}

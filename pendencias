@@ -1,0 +1,70 @@
+
+03/05/2026
+vamos por partes
+sempre responder e pensar em portugues
+
+- [x] ao tentar adicionar um novo usuario, o formulario perdo o foco a cada caracter digitado, no campo nome vai normal, mas em email, senha, a cada letra que digito preciso clicar novamente no campo para poder digitar
+- [x] no formulario de categorias esta do mesmo jeito, perde o foco a cada caracter digitado
+- no terminal eu tenho esse erro ao tentar importar o video do youtube:
+  Servidor rodando em http://localhost:4000
+Erro ao importar vídeo do YouTube: Error: Could not extract functions
+    at C:\Users\MICRO\Documents\GitHub\stream\backend\node_modules\ytdl-core\lib\sig.js:20:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+- [x] Erro assíncrono ao importar vídeo do YouTube: Error: Could not extract functions
+    at C:\Users\MICRO\Documents\GitHub\stream\backend\node_modules\ytdl-core\lib\sig.js:20:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+
+
+============
+- [x] o formulario para adicionar novo usuario e categoria perde o foco a cada caracter digitado
+- [x] o lembrar de mim no login não esta funcionando
+- [x] ao importar o video do youtube, o sistema deve automaticamente baixar o video e aplicar a marca d'agua, e upar para o servidor interno, exibindo ele na tela de videos.
+  estou com esse erro no terminal:
+  Servidor rodando em http://localhost:4000
+  Erro assíncrono ao importar vídeo do YouTube: PrismaClientKnownRequestError:
+  Invalid `prisma.processamento.create()` invocation in
+  C:\Users\MICRO\Documents\GitHub\stream\backend\src\repositories\processamento.repository.ts:5:33
+
+    2
+    3 export const ProcessamentoRepository = {
+    4   criar: async (dados: { videoId: number; status: string; mensagem?: string }) => {
+  → 5     return prisma.processamento.create(
+  Unique constraint failed on the fields: (`videoId`)
+      at si.handleRequestError (C:\Users\MICRO\Documents\GitHub\stream\backend\node_modules\@prisma\client\runtime\library.js:125:6817)
+      at si.handleAndLogRequestError (C:\Users\MICRO\Documents\GitHub\stream\backend\node_modules\@prisma\client\runtime\library.js:125:6151)
+      at si.request (C:\Users\MICRO\Documents\GitHub\stream\backend\node_modules\@prisma\client\runtime\library.js:125:5859)
+      at async l (C:\Users\MICRO\Documents\GitHub\stream\backend\node_modules\@prisma\client\runtime\library.js:130:9805)
+      at async Object.importarYoutube (C:\Users\MICRO\Documents\GitHub\stream\backend\src\services\processamento.service.ts:101:5) {
+    code: 'P2002',
+    clientVersion: '5.8.0',
+    meta: { modelName: 'Processamento', target: [ 'videoId' ] }
+  }
+
+
+
+========
+
+- [x] o download de video do youtube para o servidor interno não esta funcionando, verifique mais detalhadamente
+- [x] as notificações deve ser aberta em uma pagina, com links para videos que são denunciados....
+- [x] o admin deve poder escolher em que parte do video a marca d'agua sera inserida
+========
+- [x] ao clicar em importar video (download/upload), onde o video esta sendo salvo? não sei se ta funcionando, eu cliquei e não vi diferença...
+- [x] as notificações devem ser clicaveis, e exibir o conteudo da notificação ao clicar
+========
+- [x] como vejo os videos que favoritei?
+- [x] a denuncia de video chega pra quem? como o admin ver essas denuncias?
+- [x] os formularios, alguns ainda perdem o foco quando começo a digitar, corrija
+- [x] a busca só esta funcionando na tela inicial, onde faz a busca em tempo real enquanto digito, é necessario um botão para fazer a busca quando estiver em outras paginas, daí retorna para a pagina de busca com o resultado
+- [x] ao editar as informações do video, deve ser possivel alterar todas as informações (aquelas que são inseridas no momento de adicionar o video)
+- [x] ainda não estou conseguindo importar o video do youtube para o servidor interno
+
+======
+- [x] admin não esta conseguindo trazer o video do youtube para o servidor interno (download e upload automatico)
+- [x] ao assistir um video, os botões de favoritos, denunciar e compartilhar não esta funcionando
+- [x] editar as informações dos videos também não esta sendo possivel
+- [x] ao editar um usuario, categoria... deve ser aberto o formulario na propria pagina ao inves de ser em uma popup
+- [x] os formularios, tanto de pesquisa quanto o de adicionar novo usuario e categorias, sai do foco a cada caracter digitado, corrija
+- [x] o campo de busca deve ficar ativo não só na pagina inicial
+- [x] o link de "ver todos" não funciona para exibir todos os videos
+- [x] verifique se a busca esta funcionando corretamente, buscando por palavras chaves e o que for necessario

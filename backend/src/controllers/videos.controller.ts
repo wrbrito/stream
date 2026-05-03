@@ -1,0 +1,160 @@
+import { Request, Response } from 'express';
+import { VideoService } from '../services/video.service.js';
+import { YoutubeService } from '../services/youtube.service.js';
+import { env } from '../lib/env.js';
+
+export const VideosController = {
+  listar: async (req: Request, res: Response) => {
+    const pagina = Number(req.query.pagina || 1);
+    const limite = Number(req.query.limite || 10);
+    const busca = String(req.query.busca || '');
+    const categoriaId = req.query.categoriaId ? Number(req.query.categoriaId) : undefined;
+
+    const resultado = await VideoService.listar({ busca, categoriaId, pagina, limite });
+    return res.json({ sucesso: true, dados: resultado });
+  },
+
+  buscarPorId: async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const video = await VideoService.buscarPorId(id);
+    if (!video) {
+      return res.status(404).json({ sucesso: false, erro: 'Vídeo não encontrado' });
+    }
+    return res.json({ sucesso: true, dados: video });
+  },
+
+  registrarVisualizacao: async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    await VideoService.registrarVisualizacao(id, req.usuario?.id);
+    return res.status(201).json({ sucesso: true, dados: { mensagem: 'Visualizacao registrada' } });
+  },
+
+  listarFavoritos: async (req: Request, res: Response) => {
+    if (!req.usuario?.id) {
+      return res.status(401).json({ sucesso: false, erro: 'Usuário não autenticado' });
+    }
+    const favoritos = await VideoService.listarFavoritosPorUsuario(req.usuario.id);
+    return res.json({ sucesso: true, dados: favoritos });
+  },
+
+  favoritar: async (req: Request, res: Response) => {
+    if (!req.usuario?.id) {
+      return res.status(401).json({ sucesso: false, erro: 'Usuário não autenticado' });
+    }
+    await VideoService.favoritar(Number(req.params.id), req.usuario.id);
+    return res.status(201).json({ sucesso: true, dados: { mensagem: 'Vídeo favoritado' } });
+  },
+
+  desfavoritar: async (req: Request, res: Response) => {
+    if (!req.usuario?.id) {
+      return res.status(401).json({ sucesso: false, erro: 'Usuário não autenticado' });
+    }
+    await VideoService.desfavoritar(Number(req.params.id), req.usuario.id);
+    return res.json({ sucesso: true, dados: { mensagem: 'Vídeo removido dos favoritos' } });
+  },
+
+  verificarFavorito: async (req: Request, res: Response) => {
+    if (!req.usuario?.id) {
+      return res.status(401).json({ sucesso: false, erro: 'Usuário não autenticado' });
+    }
+    const favorito = await VideoService.verificarFavorito(Number(req.params.id), req.usuario.id);
+    return res.json({ sucesso: true, dados: { favorito } });
+  },
+
+  denunciar: async (req: Request, res: Response) => {
+    if (!req.usuario?.id) {
+      return res.status(401).json({ sucesso: false, erro: 'Usuário não autenticado' });
+    }
+    await VideoService.denunciar(Number(req.params.id), req.usuario.id);
+    return res.status(201).json({ sucesso: true, dados: { mensagem: 'Denúncia recebida com sucesso' } });
+  },
+
+  criar: async (req: Request, res: Response) => {
+    const { titulo, descricao, autor, tipo, categoriaId, urlOriginal, posicaoMarcaDagua } = req.body;
+    const arquivo = req.files && (req.files as any).arquivo ? (req.files as any).arquivo[0] : undefined;
+    const miniatura = req.files && (req.files as any).miniatura ? (req.files as any).miniatura[0] : undefined;
+
+    const caminhoArquivo = arquivo ? `/uploads/videos/${arquivo.filename}` : undefined;
+    const caminhoMiniatura = miniatura ? `/uploads/thumbnails/${miniatura.filename}` : undefined;
+
+    const video = await VideoService.criar({
+      titulo,
+      descricao,
+      autor,
+      tipo,
+      categoriaId: Number(categoriaId),
+      urlOriginal,
+      caminhoArquivo,
+      miniatura: caminhoMiniatura,
+      posicaoMarcaDagua,
+      uploaderId: req.usuario?.id ?? 0,
+    });
+
+    return res.status(201).json({ sucesso: true, dados: video });
+  },
+
+  atualizar: async (req: Request, res: Response) => {
+    const video = await VideoService.atualizar(Number(req.params.id), req.body);
+    return res.json({ sucesso: true, dados: video });
+  },
+
+  deletar: async (req: Request, res: Response) => {
+    await VideoService.deletar(Number(req.params.id));
+    return res.status(204).send();
+  },
+
+  importar: async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const body = (req.body ?? {}) as {
+      posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
+    };
+    VideoService.importarYoutube(id, body.posicaoMarcaDagua).catch((erro) => {
+      console.error('Erro assíncrono ao importar vídeo do YouTube:', erro);
+    });
+    return res.json({ sucesso: true, dados: { mensagem: 'Importação iniciada. O vídeo será processado em breve.' } });
+  },
+
+  download: async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const video = await VideoService.buscarPorId(id);
+    if (!video || !video.caminhoArquivo || video.tipo !== 'INTERNO') {
+      return res.status(404).json({ sucesso: false, erro: 'Arquivo não encontrado ou não disponível para download' });
+    }
+
+    const fs = await import('fs');
+    const path = await import('path');
+    const caminhoCompleto = path.join(process.cwd(), env.UPLOAD_DIRECTORY, 'videos', path.basename(video.caminhoArquivo));
+    
+    if (!fs.existsSync(caminhoCompleto)) {
+      return res.status(404).json({ sucesso: false, erro: 'Arquivo não encontrado no servidor' });
+    }
+
+    return res.download(caminhoCompleto, `${video.titulo}.mp4`, (err) => {
+      if (err) {
+        console.error('Erro download:', err);
+      }
+    });
+  },
+
+  buscarMetadadosYoutube: async (req: Request, res: Response) => {
+    const { url } = req.body as { url?: string };
+
+    if (!url) {
+      return res.status(400).json({ sucesso: false, erro: 'URL do YouTube é obrigatória' });
+    }
+
+    try {
+      const videoId = YoutubeService.extrairIdVideo(url);
+      if (!videoId) {
+        return res.status(400).json({ sucesso: false, erro: 'URL do YouTube inválida' });
+      }
+
+      const metadados = await YoutubeService.buscarMetadados(videoId);
+      return res.json({ sucesso: true, dados: metadados });
+    } catch (erro) {
+      console.error('Erro ao buscar metadados:', erro);
+      return res.status(500).json({ sucesso: false, erro: 'Erro ao buscar informações do vídeo' });
+    }
+  },
+};
+

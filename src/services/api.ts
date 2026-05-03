@@ -1,0 +1,397 @@
+/**
+ * Serviço de API - Cliente HTTP centralizado
+ * Gerencia autenticação, tokens JWT e requisições à API backend
+ */
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+
+export interface ApiResponse<T = unknown> {
+  sucesso: boolean;
+  dados?: T;
+  erro?: string;
+  detalhes?: unknown;
+}
+
+function extrairMensagemDetalhes(detalhes: unknown): string | null {
+  if (!detalhes || typeof detalhes !== 'object') {
+    return null;
+  }
+
+  const mensagens: string[] = [];
+
+  function coletar(valor: unknown) {
+    if (!valor || typeof valor !== 'object') {
+      return;
+    }
+
+    const erros = (valor as { _errors?: unknown })._errors;
+    if (Array.isArray(erros)) {
+      mensagens.push(...erros.filter((item): item is string => typeof item === 'string'));
+    }
+
+    for (const item of Object.values(valor)) {
+      coletar(item);
+    }
+  }
+
+  coletar(detalhes);
+  return mensagens.length ? mensagens.join(' ') : null;
+}
+
+export interface AuthPayload {
+  usuario: {
+    id: number;
+    nome: string;
+    email: string;
+    perfil: 'ADMIN' | 'PROFESSOR' | 'ALUNO';
+  };
+  token: string;
+}
+
+export const api = {
+  /**
+   * Armazena token JWT
+   */
+  setToken: (token: string, lembrar: boolean = true): void => {
+    const storage = lembrar ? localStorage : sessionStorage;
+    const outroStorage = lembrar ? sessionStorage : localStorage;
+    storage.setItem('auth_token', token);
+    outroStorage.removeItem('auth_token');
+  },
+
+  setUsuario: (usuario: AuthPayload['usuario'], lembrar: boolean = true): void => {
+    const storage = lembrar ? localStorage : sessionStorage;
+    const outroStorage = lembrar ? sessionStorage : localStorage;
+    storage.setItem('auth_usuario', JSON.stringify(usuario));
+    outroStorage.removeItem('auth_usuario');
+  },
+
+  /**
+   * Remove token JWT
+   */
+  clearToken: (): void => {
+    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
+  },
+
+  clearAuth: (): void => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_usuario');
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_usuario');
+  },
+
+  /**
+   * Retorna token JWT armazenado
+   */
+  getToken: (): string | null => {
+    return localStorage.getItem('auth_token') ?? sessionStorage.getItem('auth_token');
+  },
+
+  getUsuario: (): AuthPayload['usuario'] | null => {
+    const usuario = localStorage.getItem('auth_usuario') ?? sessionStorage.getItem('auth_usuario');
+    if (!usuario) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(usuario) as AuthPayload['usuario'];
+    } catch {
+      localStorage.removeItem('auth_usuario');
+      sessionStorage.removeItem('auth_usuario');
+      return null;
+    }
+  },
+
+  /**
+   * Verifica se usuário está autenticado
+   */
+  isAuthenticated: (): boolean => {
+    return !!api.getToken();
+  },
+
+  /**
+   * Realiza requisição HTTP genérica com autenticação automática
+   */
+  async fetch<T = unknown>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const token = api.getToken();
+    const isFormData = options.body instanceof FormData;
+    const headers: Record<string, string> = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(options.headers as Record<string, string> | undefined),
+    };
+
+    // Adicionar token no header se existir
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    // Se token expirou (401), redirecionar para login
+    if (response.status === 401) {
+      api.clearAuth();
+      // Redirecionar para login (implementar conforme sua rota)
+      window.location.href = '/login';
+      throw new Error('Sessão expirada. Por favor, faça login novamente.');
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    const data = contentType.includes('application/json')
+      ? ((await response.json()) as ApiResponse<T>)
+      : ({ sucesso: response.ok, erro: await response.text() } as ApiResponse<T>);
+
+    if (!data.sucesso) {
+      const detalhes = extrairMensagemDetalhes(data.detalhes);
+      if (detalhes) {
+        throw new Error(detalhes);
+      }
+      throw new Error(data.erro || 'Erro na requisição');
+    }
+
+    return data;
+  },
+
+  // ============ Auth ============
+
+  auth: {
+    login: async (email: string, senha: string): Promise<AuthPayload> => {
+      const response = await api.fetch<AuthPayload>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, senha }),
+      });
+      return response.dados!;
+    },
+
+    logout: async (): Promise<void> => {
+      api.clearAuth();
+      await api.fetch('/auth/logout', { method: 'POST' });
+    },
+  },
+
+  // ============ Vídeos ============
+
+  videos: {
+    listar: async (
+      pagina: number = 1,
+      limite: number = 10,
+      busca?: string,
+      categoriaId?: number
+    ) => {
+      const params = new URLSearchParams();
+      params.append('pagina', pagina.toString());
+      params.append('limite', limite.toString());
+      if (busca) params.append('busca', busca);
+      if (categoriaId) params.append('categoriaId', categoriaId.toString());
+
+      return api.fetch(`/videos?${params.toString()}`);
+    },
+
+    obterPorId: async (id: number) => {
+      return api.fetch(`/videos/${id}`);
+    },
+
+    registrarVisualizacao: async (id: number) => {
+      return api.fetch(`/videos/${id}/visualizacoes`, {
+        method: 'POST',
+      });
+    },
+
+    listarFavoritos: async () => {
+      return api.fetch('/videos/favoritos/me');
+    },
+
+    verificarFavorito: async (id: number) => {
+      return api.fetch(`/videos/${id}/favorito`);
+    },
+
+    favoritar: async (id: number) => {
+      return api.fetch(`/videos/${id}/favorito`, {
+        method: 'POST',
+      });
+    },
+
+    desfavoritar: async (id: number) => {
+      return api.fetch(`/videos/${id}/favorito`, {
+        method: 'DELETE',
+      });
+    },
+
+    denunciar: async (id: number) => {
+      return api.fetch(`/videos/${id}/denunciar`, {
+        method: 'POST',
+      });
+    },
+
+    criar: async (formData: FormData) => {
+      return api.fetch('/videos', {
+        method: 'POST',
+        headers: {}, // FormData define content-type automaticamente
+        body: formData,
+      });
+    },
+
+    atualizar: async (id: number, dados: Record<string, unknown>) => {
+      return api.fetch(`/videos/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(dados),
+      });
+    },
+
+    deletar: async (id: number) => {
+      return api.fetch(`/videos/${id}`, {
+        method: 'DELETE',
+      });
+    },
+
+    importarYoutube: async (
+      id: number,
+      posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER'
+    ) => {
+      return api.fetch(`/videos/${id}/importar`, {
+        method: 'POST',
+        body: JSON.stringify(posicaoMarcaDagua ? { posicaoMarcaDagua } : {}),
+      });
+    },
+
+    buscarMetadadosYoutube: async (url: string) => {
+      return api.fetch('/videos/metadados-youtube', {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+      });
+    },
+
+    download: async (id: number) => {
+      window.open(`${import.meta.env.VITE_API_URL}/videos/${id}/download`, '_blank');
+    },
+  },
+
+
+  // ============ Categorias ============
+
+  categorias: {
+    listar: async () => {
+      return api.fetch('/categorias');
+    },
+
+    criar: async (dados: { nome: string; descricao?: string }) => {
+      return api.fetch('/categorias', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+      });
+    },
+
+    atualizar: async (id: number, dados: Record<string, unknown>) => {
+      return api.fetch(`/categorias/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(dados),
+      });
+    },
+
+    deletar: async (id: number) => {
+      return api.fetch(`/categorias/${id}`, {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  // ============ Usuários ============
+
+  usuarios: {
+    listar: async () => {
+      return api.fetch('/usuarios');
+    },
+    criar: async (dados: { nome: string; email: string; senha: string; perfil: string }) => {
+      return api.fetch('/usuarios', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+      });
+    },
+    atualizar: async (id: number, dados: Record<string, unknown>) => {
+      return api.fetch(`/usuarios/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(dados),
+      });
+    },
+    ativar: async (id: number) => {
+      return api.fetch(`/usuarios/${id}/ativar`, {
+        method: 'PATCH',
+      });
+    },
+    desativar: async (id: number) => {
+      return api.fetch(`/usuarios/${id}/desativar`, {
+        method: 'PATCH',
+      });
+    },
+    deletar: async (id: number) => {
+      return api.fetch(`/usuarios/${id}`, {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  notifications: {
+    listar: async () => {
+      return api.fetch('/notifications');
+    },
+    contar: async () => {
+      return api.fetch('/notifications/contar');
+    },
+    marcarLida: async (id: number) => {
+      return api.fetch(`/notifications/${id}/lida`, { method: 'PATCH' });
+    },
+    marcarTodasLidas: async () => {
+      return api.fetch('/notifications/todas/lidas', { method: 'PATCH' });
+    },
+  },
+
+
+  // ============ Admin ============
+
+  admin: {
+    dashboard: async () => {
+      return api.fetch('/admin/dashboard');
+    },
+    listarConfiguracoes: async () => {
+      return api.fetch('/admin/configuracoes');
+    },
+    salvarConfiguracoes: async (configs: Record<string, string>) => {
+      return api.fetch('/admin/configuracoes', {
+        method: 'POST',
+        body: JSON.stringify({ configs }),
+      });
+    },
+  },
+};
+
+/**
+ * Hook para integrar com React Hooks (exemplo)
+ */
+export function useApi() {
+  return api;
+}
+
+/**
+ * Função para traduzi erros da API em mensagens amigáveis
+ */
+export function tratarErroApi(erro: unknown): string {
+  if (erro instanceof Error) {
+    if (erro.message === 'Sessão expirada. Por favor, faça login novamente.') {
+      return 'Sua sessão expirou. Por favor, faça login novamente.';
+    }
+    if (erro.message.includes('E-mail ou senha inválidos')) {
+      return 'E-mail ou senha incorretos.';
+    }
+    if (erro.message.includes('permissão')) {
+      return 'Você não tem permissão para realizar esta ação.';
+    }
+    return erro.message;
+  }
+  return 'Ocorreu um erro. Tente novamente.';
+}
