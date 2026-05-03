@@ -15,6 +15,7 @@ export function Login({ onLogin }: LoginProps) {
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [lembrar, setLembrar] = useState(true);
+  const [modalConteudo, setModalConteudo] = useState<{ titulo: string; texto: string } | null>(null);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,23 +116,53 @@ export function Login({ onLogin }: LoginProps) {
             <p>admin@escola.local / Admin@2026</p>
           </div>
 
-          <div className="mt-6 text-center">
             <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">
+              <button 
+                type="button" 
+                onClick={() => setModalConteudo({ 
+                  titulo: 'Ajuda', 
+                  texto: 'Se você esqueceu sua senha ou está com problemas para acessar, entre em contato com o administrador da sua instituição ou suporte técnico no ramal 123.' 
+                })}
+                className="hover:text-foreground transition-colors"
+              >
                 Ajuda
-              </a>
+              </button>
               <span>•</span>
-              <a href="#" className="hover:text-foreground transition-colors">
+              <button 
+                type="button" 
+                onClick={() => setModalConteudo({ 
+                  titulo: 'Termos de Uso', 
+                  texto: 'Esta plataforma é para uso exclusivo de alunos e professores. Todo conteúdo enviado é de responsabilidade do autor e deve respeitar as diretrizes da instituição.' 
+                })}
+                className="hover:text-foreground transition-colors"
+              >
                 Termos de Uso
-              </a>
+              </button>
               <span>•</span>
-              <a href="#" className="hover:text-foreground transition-colors">
+              <button 
+                type="button" 
+                onClick={() => setModalConteudo({ 
+                  titulo: 'Privacidade', 
+                  texto: 'Seus dados de acesso são protegidos e utilizados apenas para autenticação e registro de atividades educacionais na plataforma.' 
+                })}
+                className="hover:text-foreground transition-colors"
+              >
                 Privacidade
-              </a>
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {modalConteudo && (
+        <div className="fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">{modalConteudo.titulo}</h3>
+            <p className="text-muted-foreground mb-6 whitespace-pre-wrap">{modalConteudo.texto}</p>
+            <Button onClick={() => setModalConteudo(null)} className="w-full">Fechar</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
