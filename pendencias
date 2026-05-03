@@ -3,8 +3,18 @@
 vamos por partes
 sempre responder e pensar em portugues
 
+- [x] faça commit do que foi feito em portugues
+- [x] gere os links do Ajuda, Termos de Uso e Privacidade, lá na tela de login
+- [x] os videos em destaques poderia ser os mais assistidos? (ou há outra forma de medir um video para destaque?)
+- [x] o painel inicial lá no admin, poderia ser paginado,  exbindo os 5, 10, 15, todos os resultados... o mesmo para usuarios, videos....
+- [x] botão para ativar ou desativar darkmode
 
 ======
+- [x] adicionar avaliação nos videos para que os usuarios avaliem
+- [x] adicionar campo de comentarios nos videos para que os usuarios façam comentarios
+- [x] o admin pode excluir comentarios, bloquear ou desbloquear usuarios para fazer comentarios
+- [x] agora eu preciso que cada usuario só consiga ver o que ele tem acesso...
+- [x] o usuario aluno não consegue ver o painel de admin por exemplo, ele apenas ver os videos, faz comentario, avalia o video
 
 =====
 

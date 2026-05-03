@@ -116,6 +116,7 @@ export function Login({ onLogin }: LoginProps) {
             <p>admin@escola.local / Admin@2026</p>
           </div>
 
+          <div className="mt-6 text-center">
             <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
               <button 
                 type="button" 
