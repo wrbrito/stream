@@ -6,6 +6,7 @@ export const VideoRepository = {
     categoriaId?: number;
     pagina?: number;
     limite?: number;
+    ordenarPor?: 'recentes' | 'populares';
   }) => {
     const where: any = {};
 
@@ -29,7 +30,9 @@ export const VideoRepository = {
       prisma.video.findMany({
         where,
         include: { categoria: true, visualizacoes: true },
-        orderBy: { criadoEm: 'desc' },
+        orderBy: filtros.ordenarPor === 'populares' 
+          ? { visualizacoes: { _count: 'desc' } }
+          : { criadoEm: 'desc' },
         skip,
         take: limite,
       }),

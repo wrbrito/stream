@@ -116,6 +116,7 @@ function normalizarVideo(video: ApiVideo): Video {
 
 export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
+  const [destaques, setDestaques] = useState<Video[]>([]);
   const [favoritos, setFavoritos] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -153,6 +154,14 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         const dados = response.dados as VideosListPayload | ApiVideo[] | undefined;
         const listaApi = Array.isArray(dados) ? dados : dados?.videos ?? [];
         const videosApi = listaApi.map(normalizarVideo);
+
+        // Buscar destaques (populares) separadamente ou apenas se não houver busca
+        if (!searchQuery && !selectedCategoryId) {
+          const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
+          const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
+          const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
+          setDestaques(listaDestaques.map(normalizarVideo));
+        }
 
         localStorage.setItem('stream_videos_cache', JSON.stringify(videosApi));
         setVideos(videosApi);
@@ -471,9 +480,9 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.slice(0, 3).map((video) => (
+            {(destaques.length > 0 ? destaques : filteredVideos).slice(0, 3).map((video) => (
               <VideoCard
-                key={video.id}
+                key={`destaque-${video.id}`}
                 title={video.titulo}
                 category={video.categoria.nome}
                 author={video.autor}

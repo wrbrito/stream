@@ -182,13 +182,15 @@ export const api = {
       pagina: number = 1,
       limite: number = 10,
       busca?: string,
-      categoriaId?: number
+      categoriaId?: number,
+      ordenarPor?: 'recentes' | 'populares'
     ) => {
       const params = new URLSearchParams();
       params.append('pagina', pagina.toString());
       params.append('limite', limite.toString());
       if (busca) params.append('busca', busca);
       if (categoriaId) params.append('categoriaId', categoriaId.toString());
+      if (ordenarPor) params.append('ordenarPor', ordenarPor);
 
       return api.fetch(`/videos?${params.toString()}`);
     },

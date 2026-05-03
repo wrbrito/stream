@@ -5,13 +5,6 @@ import { env } from '../lib/env.js';
 
 export const VideosController = {
   listar: async (req: Request, res: Response) => {
-    const pagina = Number(req.query.pagina || 1);
-    const limite = Number(req.query.limite || 10);
-    const busca = String(req.query.busca || '');
-    const categoriaId = req.query.categoriaId ? Number(req.query.categoriaId) : undefined;
-
-    const resultado = await VideoService.listar({ busca, categoriaId, pagina, limite });
-    return res.json({ sucesso: true, dados: resultado });
   },
 
   buscarPorId: async (req: Request, res: Response) => {
