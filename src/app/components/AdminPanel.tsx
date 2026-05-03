@@ -116,6 +116,9 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [tipo, setTipo] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [limite, setLimite] = useState(10);
+  const [totalItens, setTotalItens] = useState(0);
 
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const { usuario } = useAuth();
@@ -195,19 +198,26 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
 
       const [dashboardResponse, videosResponse, usuariosResponse, categoriasResponse] = await Promise.all([
         api.admin.dashboard(),
-        api.videos.listar(1, 100),
-        api.usuarios.listar(),
+        api.videos.listar(pagina, limite === -1 ? 9999 : limite),
+        api.usuarios.listar(), // Usuarios ainda não tem paginação no backend, mas vamos simular ou preparar
         api.categorias.listar(),
       ]);
 
-      const videosPayload = videosResponse.dados as { videos?: AdminVideo[] } | AdminVideo[] | undefined;
+      const videosPayload = videosResponse.dados as { videos?: AdminVideo[]; total?: number } | AdminVideo[] | undefined;
       const listaVideos = Array.isArray(videosPayload) ? videosPayload : videosPayload?.videos ?? [];
+      const totalVideos = Array.isArray(videosPayload) ? listaVideos.length : videosPayload?.total ?? listaVideos.length;
 
       setDashboard(dashboardResponse.dados as Dashboard);
       setVideos(listaVideos);
       setUsuarios((usuariosResponse.dados as Usuario[]) ?? []);
       setCategorias((categoriasResponse.dados as Categoria[]) ?? []);
       
+      if (activeMenu === 'videos') {
+        setTotalItens(totalVideos);
+      } else if (activeMenu === 'users') {
+        setTotalItens((usuariosResponse.dados as Usuario[])?.length ?? 0);
+      }
+
       await carregarConfiguracoes();
     } catch (erro) {
       setError(tratarErroApi(erro));
@@ -215,6 +225,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    setPagina(1);
+  }, [activeMenu]);
+
+  useEffect(() => {
+    carregarDados();
+  }, [pagina, limite, activeMenu]);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -402,6 +420,53 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
       </div>
     );
   }
+
+    const totalPaginas = Math.ceil(totalItens / limite);
+
+    function renderPagination() {
+      if (totalItens <= 0 || limite === -1) return null;
+      
+      return (
+        <div className="flex items-center justify-between mt-6 p-4 bg-muted/20 rounded-xl border border-border">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Exibindo <strong>{Math.min(limite, totalItens)}</strong> de <strong>{totalItens}</strong> resultados
+            </span>
+            <select 
+              value={limite} 
+              onChange={(e) => setLimite(Number(e.target.value))}
+              className="bg-card border border-border rounded-md text-xs px-2 py-1 outline-none"
+            >
+              <option value={5}>5 por página</option>
+              <option value={10}>10 por página</option>
+              <option value={15}>15 por página</option>
+              <option value={-1}>Todos</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={pagina === 1}
+              onClick={() => setPagina(p => Math.max(1, p - 1))}
+            >
+              Anterior
+            </Button>
+            <span className="text-sm font-medium">
+              Página {pagina} de {totalPaginas || 1}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={pagina >= totalPaginas}
+              onClick={() => setPagina(p => p + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      );
+    }
 
   function VideosTable() {
     return (
@@ -637,9 +702,10 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         </div>
 
 
-        <div className="p-4 border-t border-border text-sm text-muted-foreground">
-          Mostrando {videosFiltrados.length} de {videos.length} videos
+        <div className="p-4 border-t border-border text-sm text-muted-foreground flex justify-between items-center">
+          <span>Mostrando {videosFiltrados.length} de {totalItens} vídeos</span>
         </div>
+        {renderPagination()}
       </div>
     );
   }
@@ -799,6 +865,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
             </tbody>
           </table>
         </div>
+        {renderPagination()}
       </div>
     );
   }
