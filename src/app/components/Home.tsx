@@ -130,6 +130,10 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
     mensagem: string;
     criadoEm: string;
   } | null>(null);
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalVideos, setTotalVideos] = useState(0);
+  const [limite] = useState(12);
   const debounceTimer = useRef<number | null>(null);
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const { usuario } = useAuth();
@@ -146,21 +150,29 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         setError('');
 
         const response = await api.videos.listar(
-          1,
-          50,
+          pagina,
+          limite,
           searchQuery.trim() || undefined,
           selectedCategoryId ?? undefined
         );
         const dados = response.dados as VideosListPayload | ApiVideo[] | undefined;
         const listaApi = Array.isArray(dados) ? dados : dados?.videos ?? [];
+        const total = Array.isArray(dados) ? listaApi.length : dados?.total ?? listaApi.length;
+        
         const videosApi = listaApi.map(normalizarVideo);
+        setTotalVideos(total);
+        setTotalPaginas(Math.ceil(total / limite));
 
-        // Buscar destaques (populares) separadamente ou apenas se não houver busca
-        if (!searchQuery && !selectedCategoryId) {
-          const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
-          const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
-          const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
-          setDestaques(listaDestaques.map(normalizarVideo));
+        // Buscar destaques (populares) separadamente para não travar a home
+        if (!searchQuery && !selectedCategoryId && pagina === 1) {
+          try {
+            const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
+            const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
+            const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
+            setDestaques(listaDestaques.map(normalizarVideo));
+          } catch (err) {
+            console.error('Erro ao buscar destaques:', err);
+          }
         }
 
         localStorage.setItem('stream_videos_cache', JSON.stringify(videosApi));
@@ -257,6 +269,11 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         window.clearTimeout(debounceTimer.current);
       }
     };
+  }, [searchQuery, selectedCategoryId, pagina, limite]);
+
+  // Resetar página ao filtrar
+  useEffect(() => {
+    setPagina(1);
   }, [searchQuery, selectedCategoryId]);
 
   useEffect(() => {
@@ -553,6 +570,34 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                 {selectedNotification.mensagem}
               </div>
             </div>
+
+            {totalPaginas > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-12 pb-8">
+                <Button
+                  variant="outline"
+                  disabled={pagina === 1}
+                  onClick={() => {
+                    setPagina(p => Math.max(1, p - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm font-medium">
+                  Página {pagina} de {totalPaginas}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={pagina >= totalPaginas}
+                  onClick={() => {
+                    setPagina(p => p + 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  Próxima
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>
