@@ -16,6 +16,8 @@ import {
   Users,
   Video,
   XCircle,
+  MessageSquare,
+  MessageSquareOff,
 } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -55,6 +57,7 @@ interface Usuario {
   email: string;
   perfil: string;
   ativo: boolean;
+  podeComentar?: boolean;
   criadoEm: string;
 }
 
@@ -661,6 +664,19 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     }
   };
 
+  const handleToggleComentarios = async (id: number, podeComentar: boolean) => {
+    try {
+      if (podeComentar) {
+        await api.usuarios.bloquearComentarios(id);
+      } else {
+        await api.usuarios.desbloquearComentarios(id);
+      }
+      await carregarDados();
+    } catch (error) {
+      setError(tratarErroApi(error));
+    }
+  };
+
   const handleEditarUsuario = (usuario: Usuario) => {
     handleStartEditUser(usuario);
   };
@@ -733,7 +749,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>
-                {['Nome', 'Email', 'Perfil', 'Status', 'Criado em', 'Ações'].map((coluna) => (
+                {['Nome', 'Email', 'Perfil', 'Status', 'Comentários', 'Criado em', 'Ações'].map((coluna) => (
                   <th key={coluna} className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     {coluna}
                   </th>
@@ -751,14 +767,27 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                       {user.ativo ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.podeComentar !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {user.podeComentar !== false ? 'Permitidos' : 'Bloqueados'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{formatarData(user.criadoEm)}</td>
                   <td className="px-6 py-4 text-sm font-medium">
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => handleStartEditUser(user)}>
                         Editar
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleToggleUserStatus(user.id, user.ativo)}>
+                      <Button size="sm" variant="outline" onClick={() => handleToggleUserStatus(user.id, user.ativo)} title={user.ativo ? 'Desativar' : 'Ativar'}>
                         {user.ativo ? 'Desativar' : 'Ativar'}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleToggleComentarios(user.id, user.podeComentar !== false)}
+                        title={user.podeComentar !== false ? 'Bloquear Comentários' : 'Permitir Comentários'}
+                      >
+                        {user.podeComentar !== false ? <MessageSquareOff className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
                       </Button>
                       <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={() => handleDeletarUsuario(user.id)}>
                         Excluir

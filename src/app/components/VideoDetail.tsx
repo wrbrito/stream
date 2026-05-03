@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Calendar, Eye, Flag, Heart, Share2, Video as VideoIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, Eye, Flag, Heart, Share2, Video as VideoIcon, Star, MessageSquare, Trash2, Send } from 'lucide-react';
 import { Button } from './Button';
 import { api, tratarErroApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -75,6 +75,11 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   const [formTitulo, setFormTitulo] = useState('');
   const [formDescricao, setFormDescricao] = useState('');
   const [globalConfigs, setGlobalConfigs] = useState<Record<string, string>>({});
+  const [comentarios, setComentarios] = useState<any[]>([]);
+  const [comentarioTexto, setComentarioTexto] = useState('');
+  const [enviandoComentario, setEnviandoComentario] = useState(false);
+  const [statsAvaliacao, setStatsAvaliacao] = useState({ media: 0, total: 0, minhaNota: null as number | null });
+  const [avaliando, setAvaliando] = useState(false);
   const visualizacoesRegistradas = useRef(new Set<number>());
 
   useEffect(() => {
@@ -112,6 +117,17 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
         const configResponse = await api.admin.listarConfiguracoes().catch(() => null);
         if (ativo && configResponse?.sucesso && configResponse.dados) {
           setGlobalConfigs(configResponse.dados as Record<string, string>);
+        }
+
+        // Carregar comentários e avaliações
+        const [comentariosResp, avaliacoesResp] = await Promise.all([
+          api.comentarios.listar(videoId),
+          api.avaliacoes.obter(videoId)
+        ]);
+
+        if (ativo) {
+          setComentarios((comentariosResp.dados as any[]) || []);
+          setStatsAvaliacao((avaliacoesResp.dados as any) || { media: 0, total: 0, minhaNota: null });
         }
       } catch (erro) {
         if (ativo) {
@@ -229,6 +245,44 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
       alert(tratarErroApi(erro));
     } finally {
       setDeletando(false);
+    }
+  };
+
+  const handleEnviarComentario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comentarioTexto.trim()) return;
+
+    try {
+      setEnviandoComentario(true);
+      const response = await api.comentarios.criar(videoId, comentarioTexto.trim());
+      setComentarios((prev) => [response.dados, ...prev]);
+      setComentarioTexto('');
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    } finally {
+      setEnviandoComentario(false);
+    }
+  };
+
+  const handleExcluirComentario = async (id: number) => {
+    if (!window.confirm('Deseja excluir este comentário?')) return;
+    try {
+      await api.comentarios.deletar(id);
+      setComentarios((prev) => prev.filter((c) => c.id !== id));
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    }
+  };
+
+  const handleAvaliar = async (nota: number) => {
+    try {
+      setAvaliando(true);
+      const response = await api.avaliacoes.avaliar(videoId, nota);
+      setStatsAvaliacao(response.dados as any);
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    } finally {
+      setAvaliando(false);
     }
   };
 
@@ -404,10 +458,114 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                 <p className="text-muted-foreground leading-relaxed">{video.descricao}</p>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                 <span className="inline-block px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-sm">
                   {video.categoria?.nome ?? 'Outros'}
                 </span>
+                
+                <div className="flex items-center gap-1 text-sm">
+                  <Star className={`w-4 h-4 ${statsAvaliacao.media > 0 ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
+                  <span className="font-semibold">{statsAvaliacao.media.toFixed(1)}</span>
+                  <span className="text-muted-foreground">({statsAvaliacao.total})</span>
+                </div>
+              </div>
+
+              {/* Avaliação */}
+              <div className="mt-8 p-4 bg-muted/30 rounded-xl border border-border">
+                <h3 className="text-sm font-semibold mb-3">O que você achou deste vídeo?</h3>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      disabled={avaliando}
+                      onClick={() => handleAvaliar(star)}
+                      className={`p-1 transition-transform hover:scale-110 ${avaliando ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= (statsAvaliacao.minhaNota || 0)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-muted-foreground hover:text-yellow-200'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  {statsAvaliacao.minhaNota && (
+                    <span className="text-xs text-muted-foreground ml-2">Sua nota: {statsAvaliacao.minhaNota}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Comentários */}
+              <div className="mt-12">
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Comentários ({comentarios.length})
+                </h3>
+
+                <form onSubmit={handleEnviarComentario} className="mb-8">
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold shrink-0">
+                      {usuario?.nome[0]}
+                    </div>
+                    <div className="flex-1">
+                      <textarea
+                        value={comentarioTexto}
+                        onChange={(e) => setComentarioTexto(e.target.value)}
+                        placeholder="Escreva um comentário..."
+                        className="w-full bg-input-background border border-border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px]"
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <Button type="submit" size="sm" disabled={enviandoComentario || !comentarioTexto.trim()}>
+                          <Send className="w-4 h-4" />
+                          {enviandoComentario ? 'Enviando...' : 'Comentar'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+
+                <div className="space-y-6">
+                  {comentarios.map((comentario) => (
+                    <div key={comentario.id} className="flex gap-4 group">
+                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground font-bold shrink-0">
+                        {comentario.usuario.nome[0]}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">{comentario.usuario.nome}</span>
+                            {comentario.usuario.perfil === 'ADMIN' && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                Admin
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(comentario.criadoEm).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {(usuario?.perfil === 'ADMIN' || usuario?.id === comentario.usuarioId) && (
+                            <button
+                              onClick={() => handleExcluirComentario(comentario.id)}
+                              className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Excluir comentário"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {comentario.texto}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {comentarios.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl">
+                      Seja o primeiro a comentar!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

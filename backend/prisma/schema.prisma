@@ -23,10 +23,13 @@ model Usuario {
   senha      String
   perfil     String @default("ALUNO")
   ativo      Boolean   @default(true)
+  podeComentar Boolean @default(true)
   criadoEm   DateTime  @default(now())
   videos     Video[]
   visualizacoes Visualizacao[]
   favoritos  Favorito[]
+  comentarios Comentario[]
+  avaliacoes  Avaliacao[]
   notificacoes Notification[]
 }
 
@@ -57,6 +60,8 @@ model Video {
   uploaderId     Int
   visualizacoes  Visualizacao[]
   favoritos      Favorito[]
+  comentarios    Comentario[]
+  avaliacoes     Avaliacao[]
   processamento  Processamento?
 }
 
@@ -104,4 +109,26 @@ model Configuracao {
   id    Int    @id @default(autoincrement())
   chave String @unique
   valor String
+}
+
+model Comentario {
+  id        Int      @id @default(autoincrement())
+  texto     String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId Int
+  video     Video    @relation(fields: [videoId], references: [id])
+  videoId   Int
+  criadoEm  DateTime @default(now())
+}
+
+model Avaliacao {
+  id        Int      @id @default(autoincrement())
+  nota      Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId Int
+  video     Video    @relation(fields: [videoId], references: [id])
+  videoId   Int
+  criadoEm  DateTime @default(now())
+
+  @@unique([usuarioId, videoId])
 }

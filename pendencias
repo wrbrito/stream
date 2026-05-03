@@ -3,6 +3,21 @@
 vamos por partes
 sempre responder e pensar em portugues
 
+- faça commit do que foi feito em portugues
+- gere os links do Ajuda, Termos de Uso e Privacidade, lá na tela de login
+- os videos em destaques poderia ser os mais assistidos? (ou há outra forma de medir um video para destaque?)
+- o painel inicial lá no admin, poderia ser paginado,  exbindo os 5, 10, 15, todos os resultados... o mesmo para usuarios, videos....
+- botão para ativar ou desativar darkmode
+
+======
+- adicionar avaliação nos videos para que os usuarios avaliem
+- adicionar campo de comentarios nos videos para que os usuarios façam comentarios
+- o admin pode excluir comentarios, bloquear ou desbloquear usuarios para fazer comentarios
+- agora eu preciso que cada usuario só consiga ver o que ele tem acesso...
+- o usuario aluno não consegue ver o painel de admin por exemplo, ele apenas ver os videos, faz comentario, avalia o video
+
+=====
+
 - [x] ao tentar adicionar um novo usuario, o formulario perdo o foco a cada caracter digitado, no campo nome vai normal, mas em email, senha, a cada letra que digito preciso clicar novamente no campo para poder digitar
 - [x] no formulario de categorias esta do mesmo jeito, perde o foco a cada caracter digitado
 - no terminal eu tenho esse erro ao tentar importar o video do youtube:

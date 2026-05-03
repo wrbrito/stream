@@ -27,6 +27,16 @@ export const UsuariosController = {
     return res.json({ sucesso: true, dados: { mensagem: 'Usuário desativado' } });
   },
 
+  bloquearComentarios: async (req: Request, res: Response) => {
+    await UsuarioService.bloquearComentarios(Number(req.params.id));
+    return res.json({ sucesso: true, dados: { mensagem: 'Comentários bloqueados' } });
+  },
+
+  desbloquearComentarios: async (req: Request, res: Response) => {
+    await UsuarioService.desbloquearComentarios(Number(req.params.id));
+    return res.json({ sucesso: true, dados: { mensagem: 'Comentários desbloqueados' } });
+  },
+
   deletar: async (req: Request, res: Response) => {
     await UsuarioService.deletar(Number(req.params.id));
     return res.status(204).send();

@@ -10,6 +10,9 @@ usuariosRouter.post('/', autenticar, permitirPerfis('ADMIN'), UsuariosController
 usuariosRouter.put('/:id', autenticar, permitirPerfis('ADMIN'), UsuariosController.atualizar);
 usuariosRouter.patch('/:id/ativar', autenticar, permitirPerfis('ADMIN'), UsuariosController.ativar);
 usuariosRouter.patch('/:id/desativar', autenticar, permitirPerfis('ADMIN'), UsuariosController.desativar);
+usuariosRouter.patch('/:id/bloquear-comentarios', autenticar, permitirPerfis('ADMIN'), UsuariosController.bloquearComentarios);
+usuariosRouter.patch('/:id/desbloquear-comentarios', autenticar, permitirPerfis('ADMIN'), UsuariosController.desbloquearComentarios);
+usuariosRouter.delete('/:id', autenticar, permitirPerfis('ADMIN'), UsuariosController.deletar);
 
 export { usuariosRouter };
 

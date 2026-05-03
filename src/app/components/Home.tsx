@@ -4,6 +4,7 @@ import { VideoCard } from './VideoCard';
 import { Button } from './Button';
 import { api } from '../../services/api';
 import { useNotifications } from '../../contexts/NotificationsContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface HomeProps {
   onVideoClick: (videoId: number) => void;
@@ -130,6 +131,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
   } | null>(null);
   const debounceTimer = useRef<number | null>(null);
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
+  const { usuario } = useAuth();
 
   // Carregar vídeos com cache + mock fallback
   useEffect(() => {
@@ -313,10 +315,12 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
             </div>
 
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={onUploadClick}>
-                <Upload className="w-4 h-4" />
-                Enviar Vídeo
-              </Button>
+              {usuario?.perfil !== 'ALUNO' && (
+                <Button variant="outline" size="sm" onClick={onUploadClick}>
+                  <Upload className="w-4 h-4" />
+                  Enviar Vídeo
+                </Button>
+              )}
               <div className="relative">
                 <Button variant="ghost" size="icon" onClick={() => setShowNotifications(!showNotifications)} className="relative">
                   <Bell className="w-5 h-5" />
@@ -367,14 +371,22 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                   </div>
                 )}
               </div>
-              <button
-                onClick={onAdminClick}
-                className="flex items-center gap-2 p-2 hover:bg-accent rounded-lg transition-colors"
-              >
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary-foreground" />
+              {usuario?.perfil === 'ADMIN' && (
+                <button
+                  onClick={onAdminClick}
+                  className="flex items-center gap-2 p-2 hover:bg-accent rounded-lg transition-colors"
+                  title="Painel Administrativo"
+                >
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                </button>
+              )}
+              {usuario?.perfil !== 'ADMIN' && (
+                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-muted-foreground" />
                 </div>
-              </button>
+              )}
             </div>
           </div>
         </div>

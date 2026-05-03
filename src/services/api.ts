@@ -334,6 +334,45 @@ export const api = {
         method: 'DELETE',
       });
     },
+    bloquearComentarios: async (id: number) => {
+      return api.fetch(`/usuarios/${id}/bloquear-comentarios`, {
+        method: 'PATCH',
+      });
+    },
+    desbloquearComentarios: async (id: number) => {
+      return api.fetch(`/usuarios/${id}/desbloquear-comentarios`, {
+        method: 'PATCH',
+      });
+    },
+  },
+
+  comentarios: {
+    listar: async (videoId: number) => {
+      return api.fetch(`/comentarios/video/${videoId}`);
+    },
+    criar: async (videoId: number, texto: string) => {
+      return api.fetch(`/comentarios/video/${videoId}`, {
+        method: 'POST',
+        body: JSON.stringify({ texto }),
+      });
+    },
+    deletar: async (id: number) => {
+      return api.fetch(`/comentarios/${id}`, {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  avaliacoes: {
+    obter: async (videoId: number) => {
+      return api.fetch(`/avaliacoes/video/${videoId}`);
+    },
+    avaliar: async (videoId: number, nota: number) => {
+      return api.fetch(`/avaliacoes/video/${videoId}`, {
+        method: 'POST',
+        body: JSON.stringify({ nota }),
+      });
+    },
   },
 
   notifications: {

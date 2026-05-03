@@ -18,6 +18,7 @@ export const UsuarioRepository = {
         email: true,
         perfil: true,
         ativo: true,
+        podeComentar: true,
         criadoEm: true,
       },
     });
@@ -54,6 +55,8 @@ export const UsuarioRepository = {
       prisma.visualizacao.deleteMany({ where: { usuarioId: id } }),
       prisma.favorito.deleteMany({ where: { usuarioId: id } }),
       prisma.notification.deleteMany({ where: { usuarioId: id } }),
+      prisma.comentario.deleteMany({ where: { usuarioId: id } }),
+      prisma.avaliacao.deleteMany({ where: { usuarioId: id } }),
       // Reatribui os vídeos do usuário para o admin (ou mantém se for o último, mas isso não deve acontecer)
       ...(admin ? [prisma.video.updateMany({ where: { uploaderId: id }, data: { uploaderId: admin.id } })] : []),
       prisma.usuario.delete({ where: { id } })

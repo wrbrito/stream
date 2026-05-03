@@ -36,6 +36,14 @@ export const UsuarioService = {
     return UsuarioRepository.atualizar(id, { ativo: false });
   },
 
+  bloquearComentarios: async (id: number) => {
+    return UsuarioRepository.atualizar(id, { podeComentar: false });
+  },
+
+  desbloquearComentarios: async (id: number) => {
+    return UsuarioRepository.atualizar(id, { podeComentar: true });
+  },
+
   deletar: UsuarioRepository.deletar,
 };
 
