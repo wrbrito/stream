@@ -185,7 +185,6 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
           try {
             const videosCache = JSON.parse(cacheStr) as Video[];
             setVideos(videosCache);
-            return;
           } catch {
             // Cache corrompido, usa mock
           }
@@ -250,11 +249,8 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         setVideos(mockVideos);
         setError('Usando dados demo (backend offline)');
       } finally {
-        if (initialLoad) {
-          setLoading(false);
-        } else {
-          setSearching(false);
-        }
+        setLoading(false);
+        setSearching(false);
         setInitialLoad(false);
       }
     };
