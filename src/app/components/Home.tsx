@@ -138,58 +138,56 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const { usuario } = useAuth();
 
-  // Carregar vídeos com cache + mock fallback
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        if (initialLoad) {
-          setLoading(true);
-        } else {
-          setSearching(true);
+  // Função reutilizável para buscar vídeos
+  const fetchVideos = async (isInitial: boolean) => {
+    try {
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setSearching(true);
+      }
+      setError('');
+
+      const response = await api.videos.listar(
+        pagina,
+        limite,
+        searchQuery.trim() || undefined,
+        selectedCategoryId ?? undefined
+      );
+      const dados = response.dados as VideosListPayload | ApiVideo[] | undefined;
+      const listaApi = Array.isArray(dados) ? dados : dados?.videos ?? [];
+      const total = Array.isArray(dados) ? listaApi.length : dados?.total ?? listaApi.length;
+      
+      const videosApi = listaApi.map(normalizarVideo);
+      setTotalVideos(total);
+      setTotalPaginas(Math.ceil(total / limite));
+
+      // Buscar destaques (populares) separadamente
+      if (!searchQuery && !selectedCategoryId && pagina === 1) {
+        try {
+          const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
+          const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
+          const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
+          setDestaques(listaDestaques.map(normalizarVideo));
+        } catch (err) {
+          console.error('Erro ao buscar destaques:', err);
         }
-        setError('');
+      }
 
-        const response = await api.videos.listar(
-          pagina,
-          limite,
-          searchQuery.trim() || undefined,
-          selectedCategoryId ?? undefined
-        );
-        const dados = response.dados as VideosListPayload | ApiVideo[] | undefined;
-        const listaApi = Array.isArray(dados) ? dados : dados?.videos ?? [];
-        const total = Array.isArray(dados) ? listaApi.length : dados?.total ?? listaApi.length;
-        
-        const videosApi = listaApi.map(normalizarVideo);
-        setTotalVideos(total);
-        setTotalPaginas(Math.ceil(total / limite));
+      localStorage.setItem('stream_videos_cache', JSON.stringify(videosApi));
+      setVideos(videosApi);
+    } catch (err) {
+      console.error('API offline, usando cache/mock:', err);
 
-        // Buscar destaques (populares) separadamente para não travar a home
-        if (!searchQuery && !selectedCategoryId && pagina === 1) {
-          try {
-            const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
-            const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
-            const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
-            setDestaques(listaDestaques.map(normalizarVideo));
-          } catch (err) {
-            console.error('Erro ao buscar destaques:', err);
-          }
+      const cacheStr = localStorage.getItem('stream_videos_cache');
+      if (cacheStr) {
+        try {
+          const videosCache = JSON.parse(cacheStr) as Video[];
+          setVideos(videosCache);
+        } catch {
+          // Cache corrompido
         }
-
-        localStorage.setItem('stream_videos_cache', JSON.stringify(videosApi));
-        setVideos(videosApi);
-      } catch (err) {
-        console.error('API offline, usando cache/mock:', err);
-
-        const cacheStr = localStorage.getItem('stream_videos_cache');
-        if (cacheStr) {
-          try {
-            const videosCache = JSON.parse(cacheStr) as Video[];
-            setVideos(videosCache);
-          } catch {
-            // Cache corrompido, usa mock
-          }
-        }
-
+      } else {
         const mockVideos: Video[] = [
           {
             id: 1,
@@ -247,25 +245,35 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
           },
         ];
         setVideos(mockVideos);
-        setError('Usando dados demo (backend offline)');
-      } finally {
-        setLoading(false);
-        setSearching(false);
-        setInitialLoad(false);
       }
-    };
+      setError('Usando dados demo (backend offline)');
+    } finally {
+      setLoading(false);
+      setSearching(false);
+      setInitialLoad(false);
+    }
+  };
 
+  // Carregamento INICIAL — sem debounce, executa imediatamente
+  useEffect(() => {
+    fetchVideos(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Carregamento por busca/filtros/paginação — com debounce
+  useEffect(() => {
+    if (initialLoad) return; // Já coberto pelo efeito acima
+    
     if (debounceTimer.current) {
       window.clearTimeout(debounceTimer.current);
     }
-    debounceTimer.current = window.setTimeout(fetchVideos, 300);
+    debounceTimer.current = window.setTimeout(() => fetchVideos(false), 300);
 
     return () => {
       if (debounceTimer.current) {
         window.clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchQuery, selectedCategoryId, pagina, limite]);
+  }, [searchQuery, selectedCategoryId, pagina]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resetar página ao filtrar
   useEffect(() => {
