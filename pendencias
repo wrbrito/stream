@@ -3,9 +3,9 @@
 vamos por partes
 sempre responder e pensar em portugues
 
-- após o login a pagina fica só carregando mas não carrega nada
-- sinto falta de um rodapé nas paginas...
-- a pagina principal depois do login poderia ter uma paginação também
+- [x] após o login a pagina fica só carregando mas não carrega nada
+- [x] sinto falta de um rodapé nas paginas...
+- [x] a pagina principal depois do login poderia ter uma paginação também
 
 =======
 
