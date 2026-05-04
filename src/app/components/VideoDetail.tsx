@@ -316,15 +316,6 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft className="w-5 h-5" />
-            Voltar
-          </Button>
-        </div>
-      </header>
-
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">

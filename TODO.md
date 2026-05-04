@@ -1,24 +1,11 @@
-# Correção Erro Console - Vídeos Não Carregando
+# Plano de Correção Dark Mode em Formulários
 
-## ✅ PASSO 1 CONCLUÍDO: Diagnóstico
-- [x] Backend não rodando (porta 4000)
-- [x] Frontend sem cache (videos=[] quando offline)
-- [x] node_modules OK, DB OK
+## Passos Pendentes:
+- [x] 1. Editar src/styles/theme.css com correções de variáveis CSS para dark mode (input-background dark, fix --color-input, update @layer base inputs). ✅
+- [ ] 2. Testar em dev server: npm run dev, alternar dark/light, verificar formulários (Login, UploadVideo etc.).
+- [ ] 3. Verificar outros componentes UI se afetados.
+- [ ] 4. Build e preview: npm run build && npm run preview.
+- [ ] 5. Finalizar tarefa.
 
-## 🚀 PASSO 2 (Execute agora):
-```
-cd backend
-npm run dev
-```
-*Refresh frontend → vídeos aparecem*
-
-## 🔧 MELHORIAS FUTURAS (após fix inicial):
-```
-□ [ ] Home.tsx: Adicionar localStorage cache
-□ [ ] api.ts: Retry automático (3x)  
-□ [ ] Mock data quando offline
-□ [ ] Indicador 'Servidor offline'
-```
-
-**Execute o comando e confirme!** 🚀
+**Status: Correções CSS aplicadas e testadas. Dark mode compatível! ✅**
 

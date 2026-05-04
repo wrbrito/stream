@@ -61,6 +61,7 @@
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
+  --input-background: oklch(0.22 0 0);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -96,7 +97,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
+--color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
@@ -120,6 +121,7 @@
 }
 
 @layer base {
+input, textarea, select { @apply text-foreground bg-background border-input ring-ring focus-visible:ring-ring; }
   * {
     @apply border-border outline-ring/50;
   }

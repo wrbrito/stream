@@ -31,19 +31,19 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-foreground mb-4">Plataforma</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Início</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Vídeos</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Categorias</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Favoritos</a></li>
+              <li><a href="/" className="hover:text-primary transition-colors">Início</a></li>
+              <li><a href="/videos" className="hover:text-primary transition-colors">Vídeos</a></li>
+              <li><a href="/categorias" className="hover:text-primary transition-colors">Categorias</a></li>
+              <li><a href="/favoritos" className="hover:text-primary transition-colors">Favoritos</a></li>
             </ul>
           </div>
 
           <div>
             <h3 className="font-semibold text-foreground mb-4">Suporte</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Ajuda</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Termos de Uso</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Privacidade</a></li>
+              <li><a href="/ajuda" className="hover:text-primary transition-colors">Ajuda</a></li>
+              <li><a href="/termos" className="hover:text-primary transition-colors">Termos de Uso</a></li>
+              <li><a href="/privacidade" className="hover:text-primary transition-colors">Privacidade</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
             </ul>
           </div>
