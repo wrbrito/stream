@@ -7,7 +7,27 @@ import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
 
-app.use(cors({ origin: env.APP_URL, credentials: true }));
+// Configurar CORS para aceitar múltiplas portas do localhost durante desenvolvimento
+const allowedOrigins = [
+  env.APP_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+  'http://localhost:5177',
+];
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    // Permitir requisições sem origin (como aplicações desktop ou testes)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS error'));
+    }
+  },
+  credentials: true 
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(process.cwd(), env.UPLOAD_DIRECTORY)));

@@ -5,6 +5,25 @@ import { env } from '../lib/env.js';
 
 export const VideosController = {
   listar: async (req: Request, res: Response) => {
+    try {
+      const { busca, categoriaId, pagina, limite, ordenarPor } = req.query;
+      
+      const resultado = await VideoService.listar({
+        busca: busca as string | undefined,
+        categoriaId: categoriaId ? Number(categoriaId) : undefined,
+        pagina: pagina ? Number(pagina) : 1,
+        limite: limite ? Number(limite) : 10,
+        ordenarPor: ordenarPor as 'recentes' | 'populares' | undefined,
+      });
+      
+      return res.json({ sucesso: true, dados: resultado });
+    } catch (erro) {
+      console.error('Erro ao listar vídeos:', erro);
+      return res.status(500).json({ 
+        sucesso: false, 
+        erro: 'Erro ao listar vídeos' 
+      });
+    }
   },
 
   buscarPorId: async (req: Request, res: Response) => {

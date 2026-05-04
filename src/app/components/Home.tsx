@@ -574,34 +574,34 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                 {selectedNotification.mensagem}
               </div>
             </div>
+          </div>
+        )}
 
-            {totalPaginas > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-12 pb-8">
-                <Button
-                  variant="outline"
-                  disabled={pagina === 1}
-                  onClick={() => {
-                    setPagina(p => Math.max(1, p - 1));
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  Anterior
-                </Button>
-                <span className="text-sm font-medium">
-                  Página {pagina} de {totalPaginas}
-                </span>
-                <Button
-                  variant="outline"
-                  disabled={pagina >= totalPaginas}
-                  onClick={() => {
-                    setPagina(p => p + 1);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  Próxima
-                </Button>
-              </div>
-            )}
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-12 pb-8">
+            <Button
+              variant="outline"
+              disabled={pagina === 1}
+              onClick={() => {
+                setPagina(p => Math.max(1, p - 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              Anterior
+            </Button>
+            <span className="text-sm font-medium">
+              Página {pagina} de {totalPaginas}
+            </span>
+            <Button
+              variant="outline"
+              disabled={pagina >= totalPaginas}
+              onClick={() => {
+                setPagina(p => p + 1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              Próxima
+            </Button>
           </div>
         )}
       </main>
