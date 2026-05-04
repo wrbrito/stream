@@ -19,7 +19,6 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [watermarkPosition, setWatermarkPosition] = useState<'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER' | ''>('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -27,31 +26,14 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
   const [metadataLoaded, setMetadataLoaded] = useState(false);
   const [categoriesList, setCategoriesList] = useState<{ id: number, nome: string }[]>([]);
 
-  useEffect(() => {
     async function loadInitialData() {
       try {
-        const [catResponse, configResponse] = await Promise.all([
-          api.categorias.listar(),
-          api.admin.listarConfiguracoes()
-        ]);
-        
+        const catResponse = await api.categorias.listar();
         if (catResponse.sucesso && Array.isArray(catResponse.dados)) {
           setCategoriesList(catResponse.dados);
         }
-        
-        if (configResponse.sucesso && configResponse.dados) {
-          const configs = configResponse.dados as Record<string, string>;
-          if (configs.WATERMARK_POSITION) {
-            setWatermarkPosition(configs.WATERMARK_POSITION as any);
-          } else {
-            setWatermarkPosition('BOTTOM_LEFT');
-          }
-        } else {
-          setWatermarkPosition('BOTTOM_LEFT');
-        }
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
-        setWatermarkPosition('BOTTOM_LEFT');
       }
     }
     loadInitialData();
@@ -120,7 +102,6 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
       formData.append('categoriaId', category);
       formData.append('autor', usuario?.nome ?? 'Administrador da Escola');
       formData.append('tipo', uploadType === 'youtube' ? 'YOUTUBE' : 'INTERNO');
-      formData.append('posicaoMarcaDagua', watermarkPosition);
       formData.append('tags', tags);
       
       if (uploadType === 'file') {
@@ -307,23 +288,6 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Posição da marca d&apos;água
-                </label>
-                <select
-                  value={watermarkPosition}
-                  onChange={(e) => setWatermarkPosition(e.target.value as 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER')}
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary transition-all"
-                >
-                  <option value="TOP_LEFT">Topo esquerdo</option>
-                  <option value="TOP_RIGHT">Topo direito</option>
-                  <option value="BOTTOM_LEFT">Inferior esquerdo</option>
-                  <option value="BOTTOM_RIGHT">Inferior direito</option>
-                  <option value="CENTER">Centro</option>
-                </select>
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">

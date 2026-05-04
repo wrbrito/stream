@@ -54,10 +54,8 @@ function obterPosicaoMarcaDagua(posicao: PosicaoMarcaDagua) {
 async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, posicaoMarcaDagua?: PosicaoMarcaDagua) {
   await garantirDiretorio(arquivoSaida);
   
-  const posicaoFinal = posicaoMarcaDagua || (await ConfiguracaoService.obter('WATERMARK_POSITION', 'BOTTOM_LEFT')) as PosicaoMarcaDagua;
   const textoMarcaDagua = await ConfiguracaoService.obter('WATERMARK_TEXT', env.WATERMARK_TEXT);
-  
-  const posicao = obterPosicaoMarcaDagua(posicaoFinal);
+  const posicao = obterPosicaoMarcaDagua(posicaoMarcaDagua || 'BOTTOM_LEFT');
 
   return new Promise<void>((resolve, reject) => {
     ffmpeg(arquivoOriginal)
@@ -107,9 +105,11 @@ export const ProcessamentoService = {
       status: 'EM_ANDAMENTO',
     });
 
+    const posicaoFinal = posicaoMarcaDagua || (await ConfiguracaoService.obter('WATERMARK_POSITION', 'BOTTOM_LEFT')) as PosicaoMarcaDagua;
+
     try {
       await baixarYoutube(url, caminhoTemp);
-      await aplicarMarcaDagua(caminhoTemp, caminhoFinal, posicaoMarcaDagua);
+      await aplicarMarcaDagua(caminhoTemp, caminhoFinal, posicaoFinal);
       await fs.rm(caminhoTemp).catch(() => null);
 
       let miniatura = null;
@@ -129,7 +129,7 @@ export const ProcessamentoService = {
 
       await ProcessamentoRepository.atualizar(id, {
         status: 'CONCLUIDO',
-        mensagem: `Importação concluída com marca d’água aplicada (${posicaoMarcaDagua})`,
+        mensagem: `Importação concluída com marca d’água aplicada (${posicaoFinal})`,
         finalizadoEm: new Date(),
       });
 
@@ -156,7 +156,9 @@ export const ProcessamentoService = {
       status: 'EM_ANDAMENTO',
     });
 
-    await aplicarMarcaDagua(arquivo, caminhoFinal, posicaoMarcaDagua);
+    const posicaoFinal = posicaoMarcaDagua || (await ConfiguracaoService.obter('WATERMARK_POSITION', 'BOTTOM_LEFT')) as PosicaoMarcaDagua;
+
+    await aplicarMarcaDagua(arquivo, caminhoFinal, posicaoFinal);
 
     let miniatura = null;
     try {
@@ -174,7 +176,7 @@ export const ProcessamentoService = {
 
     await ProcessamentoRepository.atualizar(id, {
       status: 'CONCLUIDO',
-      mensagem: `Vídeo interno processado com marca d’água (${posicaoMarcaDagua})`,
+      mensagem: `Vídeo interno processado com marca d’água (${posicaoFinal})`,
       finalizadoEm: new Date(),
     });
 

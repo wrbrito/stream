@@ -301,16 +301,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
     };
   }, []);
 
-  const filteredVideos = videos.filter((video) => {
-    const lowerQuery = searchQuery.toLowerCase();
-    const matchesSearch =
-      !lowerQuery ||
-      video.titulo.toLowerCase().includes(lowerQuery) ||
-      video.autor.toLowerCase().includes(lowerQuery) ||
-      video.categoria.nome.toLowerCase().includes(lowerQuery);
-    const matchesCategory = !selectedCategoryId || video.categoria.id === selectedCategoryId;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredVideos = videos;
   const videosFavoritos = filteredVideos.filter((video) => favoritos.includes(video.id));
 
   if (loading) {

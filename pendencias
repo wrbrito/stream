@@ -1,4 +1,14 @@
+04/05/2026
+Sempre responder e pensar em portugues
+após cada alteração, fazer commit e push em portugues
 
+- [x] o perfil aluno não envia video, ele assiste, comenta, avalia, favorito e denuncia
+- [x] o perfil professor envia video, assiste, comenta, avalia, favorito e denuncia
+- [x] o perfil admin tem acesso a tudo
+- [x] a marca d'agua deve ficar padrão para todos usuarios que forem assistir, e deve ficar fixa no local onde o admin escolher
+- [x] o botão do bonequinho, deve exibir uma pagina de perfil de usuario com as informações do usuario logado, exceto admin que vai para pagina admin como é atualmente
+
+===========
 03/05/2026
 vamos por partes
 sempre responder e pensar em portugues

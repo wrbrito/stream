@@ -11,8 +11,9 @@ import { AdminPanel } from './components/AdminPanel';
 import { NotificationsPage } from './components/NotificationsPage';
 import { Button } from './components/Button';
 import { Footer } from './components/Footer';
+import { ProfilePage } from './components/ProfilePage';
 
-type Screen = 'login' | 'home' | 'video' | 'upload' | 'admin' | 'notifications';
+type Screen = 'login' | 'home' | 'video' | 'upload' | 'admin' | 'notifications' | 'profile';
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
@@ -57,7 +58,11 @@ function AppContent() {
   };
 
   const handleAdminClick = () => {
-    setCurrentScreen('admin');
+    if (usuario?.perfil === 'ADMIN') {
+      setCurrentScreen('admin');
+    } else {
+      setCurrentScreen('profile');
+    }
   };
 
   const handleGlobalSearch = () => {
@@ -131,10 +136,12 @@ function AppContent() {
 
           {/* Ícones lado direito */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleUploadClick} title="Enviar vídeo" className="hidden md:flex gap-2 rounded-xl border-border/60">
-              <Upload className="w-4 h-4" />
-              <span className="font-semibold">Enviar Vídeo</span>
-            </Button>
+            {(usuario?.perfil === 'ADMIN' || usuario?.perfil === 'PROFESSOR') && (
+              <Button variant="outline" onClick={handleUploadClick} title="Enviar vídeo" className="hidden md:flex gap-2 rounded-xl border-border/60">
+                <Upload className="w-4 h-4" />
+                <span className="font-semibold">Enviar Vídeo</span>
+              </Button>
+            )}
             
             <div className="relative">
               <Button variant="ghost" size="icon" onClick={() => setShowNotifications(!showNotifications)} title="Notificações" className="rounded-xl relative">
@@ -191,7 +198,7 @@ function AppContent() {
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
             
-            <Button variant="ghost" size="icon" onClick={handleAdminClick} title="Administração" className="rounded-xl">
+            <Button variant="ghost" size="icon" onClick={handleAdminClick} title={usuario?.perfil === 'ADMIN' ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform hover:scale-110">
                 <User className="w-5 h-5" />
               </div>
@@ -256,6 +263,9 @@ function AppContent() {
         )}
         {currentScreen === 'notifications' && (
           <NotificationsPage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
+        )}
+        {currentScreen === 'profile' && (
+          <ProfilePage onBack={handleBackToHome} />
         )}
       </main>
       <Footer />

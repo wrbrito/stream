@@ -150,7 +150,6 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [editingCategoryDescricao, setEditingCategoryDescricao] = useState('');
 
   const [newUser, setNewUser] = useState({ nome: '', email: '', senha: '', perfil: 'ALUNO' });
-  const [importWatermarkPosition, setImportWatermarkPosition] = useState<'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER'>('BOTTOM_LEFT');
   const [newCategory, setNewCategory] = useState({ nome: '', descricao: '' });
   const [globalConfigs, setGlobalConfigs] = useState<Record<string, string>>({});
   const [isSavingConfigs, setIsSavingConfigs] = useState(false);
@@ -169,9 +168,6 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
       if (response.sucesso && response.dados) {
         const configs = response.dados as Record<string, string>;
         setGlobalConfigs(configs);
-        if (configs.WATERMARK_POSITION) {
-          setImportWatermarkPosition(configs.WATERMARK_POSITION as any);
-        }
       }
     } catch (erro) {
       console.error('Erro ao carregar configurações:', erro);
@@ -303,7 +299,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
 
   const handleImportarVideo = async (id: number) => {
     try {
-      await api.videos.importarYoutube(id, importWatermarkPosition);
+      await api.videos.importarYoutube(id);
       alert('Importação iniciada. O arquivo final será salvo em /uploads/videos (pasta backend/storage/videos).');
       await carregarDados();
     } catch (error) {
@@ -503,22 +499,6 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
               <option value="">Todos os tipos</option>
               <option value="INTERNO">Interno</option>
               <option value="YOUTUBE">YouTube</option>
-            </select>
-            <select
-              value={importWatermarkPosition}
-              onChange={(event) =>
-                setImportWatermarkPosition(
-                  event.target.value as 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER'
-                )
-              }
-              className="px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-              title="Posição da marca d'água para importação do YouTube"
-            >
-              <option value="TOP_LEFT">Marca: topo esquerdo</option>
-              <option value="TOP_RIGHT">Marca: topo direito</option>
-              <option value="BOTTOM_LEFT">Marca: inferior esquerdo</option>
-              <option value="BOTTOM_RIGHT">Marca: inferior direito</option>
-              <option value="CENTER">Marca: centro</option>
             </select>
           </div>
           {onUploadClick && (
