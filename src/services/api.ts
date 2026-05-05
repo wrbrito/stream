@@ -44,6 +44,7 @@ export interface AuthPayload {
     nome: string;
     email: string;
     perfil: 'ADMIN' | 'PROFESSOR' | 'ALUNO';
+    fotoPerfil?: string | null;
   };
   token: string;
 }
@@ -348,13 +349,55 @@ export const api = {
     },
   },
 
+  profile: {
+    obter: async () => {
+      return api.fetch('/profile');
+    },
+    atualizar: async (dados: Record<string, unknown>) => {
+      return api.fetch('/profile', {
+        method: 'PUT',
+        body: JSON.stringify(dados),
+      });
+    },
+    atualizarFoto: async (dados: FormData | { fotoPerfil: string }) => {
+      if (dados instanceof FormData) {
+        return api.fetch('/profile/foto', {
+          method: 'POST',
+          body: dados,
+        });
+      }
+      return api.fetch('/profile/foto', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+      });
+    },
+    trocarSenha: async (dados: { senhaAtual: string; novaSenha: string; confirmarSenha: string }) => {
+      return api.fetch('/profile/senha', {
+        method: 'PATCH',
+        body: JSON.stringify(dados),
+      });
+    },
+    listarAvaliacoes: async () => {
+      return api.fetch('/profile/avaliacoes');
+    },
+    listarComentarios: async () => {
+      return api.fetch('/profile/comentarios');
+    },
+  },
+
   comentarios: {
     listar: async (videoId: number) => {
       return api.fetch(`/comentarios/video/${videoId}`);
     },
-    criar: async (videoId: number, texto: string) => {
+    criar: async (videoId: number, texto: string, parentId?: number) => {
       return api.fetch(`/comentarios/video/${videoId}`, {
         method: 'POST',
+        body: JSON.stringify({ texto, parentId }),
+      });
+    },
+    atualizar: async (id: number, texto: string) => {
+      return api.fetch(`/comentarios/${id}`, {
+        method: 'PUT',
         body: JSON.stringify({ texto }),
       });
     },
@@ -407,6 +450,26 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ configs }),
       });
+    },
+    listarComentarios: async () => {
+      return api.fetch('/admin/comentarios');
+    },
+    atualizarComentario: async (id: number, texto: string) => {
+      return api.fetch(`/admin/comentarios/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ texto }),
+      });
+    },
+    deletarComentario: async (id: number) => {
+      return api.fetch(`/admin/comentarios/${id}`, {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  configuracoes: {
+    publicas: async () => {
+      return api.fetch('/configuracoes/publicas');
     },
   },
 };

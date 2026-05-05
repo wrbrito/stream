@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import { ConfiguracaoService } from '../services/configuracao.service.js';
 
 export const ConfiguracaoController = {
+  listarPublicas: async (_req: Request, res: Response) => {
+    try {
+      const configs = await ConfiguracaoService.listarPublicas();
+      return res.json({ sucesso: true, dados: configs });
+    } catch (erro) {
+      return res.status(500).json({ sucesso: false, erro: 'Erro ao listar configuracoes publicas' });
+    }
+  },
+
   listar: async (_req: Request, res: Response) => {
     try {
       const configs = await ConfiguracaoService.listar();

@@ -2,9 +2,11 @@ import { UsuarioRepository } from '../repositories/usuario.repository.js';
 import { VideoRepository } from '../repositories/video.repository.js';
 import { CategoriaRepository } from '../repositories/categoria.repository.js';
 import { prisma } from '../lib/prisma.js';
+import { ComentarioService } from './comentario.service.js';
 
 export const AdminService = {
   listarUsuarios: UsuarioRepository.listar,
+  listarComentarios: ComentarioService.listarTodos,
   dashboard: async () => {
     const [estatisticas, usuarios, categorias, recentes, categoriasResumo] = await Promise.all([
       VideoRepository.contarEstatisticas(),

@@ -39,3 +39,17 @@ export const upload = multer({
     },
   }),
 });
+
+export const uploadFotoPerfil = multer({
+  storage: storageDestino('fotos'),
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('A foto de perfil deve ser uma imagem'));
+  },
+  limits: {
+    fileSize: 3 * 1024 * 1024,
+  },
+});

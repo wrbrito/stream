@@ -6,6 +6,7 @@ const comentariosRouter = Router();
 
 comentariosRouter.get('/video/:videoId', ComentarioController.listar);
 comentariosRouter.post('/video/:videoId', autenticar, ComentarioController.criar);
+comentariosRouter.put('/:id', autenticar, ComentarioController.atualizar);
 comentariosRouter.delete('/:id', autenticar, ComentarioController.deletar);
 
 export { comentariosRouter };

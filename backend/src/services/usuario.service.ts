@@ -4,7 +4,7 @@ import { UsuarioRepository } from '../repositories/usuario.repository.js';
 export const UsuarioService = {
   listar: UsuarioRepository.listar,
 
-  criar: async (dados: { nome: string; email: string; senha: string; perfil: string }) => {
+  criar: async (dados: { nome: string; email: string; senha: string; perfil: string; fotoPerfil?: string | null; ativo?: boolean; podeComentar?: boolean }) => {
     const usuarioExistente = await UsuarioRepository.buscarPorEmail(dados.email);
     if (usuarioExistente) {
       throw new Error('E-mail já cadastrado');
@@ -17,10 +17,13 @@ export const UsuarioService = {
       email: dados.email,
       senha: senhaHash,
       perfil: dados.perfil,
+      fotoPerfil: dados.fotoPerfil,
+      ativo: dados.ativo,
+      podeComentar: dados.podeComentar,
     });
   },
 
-  atualizar: async (id: number, dados: Partial<{ nome: string; email: string; senha?: string; perfil: string; ativo: boolean }>) => {
+  atualizar: async (id: number, dados: Partial<{ nome: string; email: string; senha?: string; perfil: string; ativo: boolean; podeComentar: boolean; fotoPerfil: string | null }>) => {
     const updates: any = { ...dados };
     if (dados.senha) {
       updates.senha = await bcrypt.hash(dados.senha, 12);

@@ -14,6 +14,26 @@ export const ConfiguracaoService = {
     }, {} as Record<string, string>);
   },
 
+  listarPublicas: async () => {
+    const todas = await ConfiguracaoService.listar();
+    const chavesPublicas = [
+      'LOGO_URL',
+      'NOME_SITE',
+      'COR_PRIMARIA',
+      'WATERMARK_TEXT',
+      'WATERMARK_POSITION',
+      'MARCA_DAGUA_TEXTO',
+      'MARCA_DAGUA_POSICAO',
+    ];
+
+    return chavesPublicas.reduce((acc, chave) => {
+      if (todas[chave] !== undefined) {
+        acc[chave] = todas[chave];
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  },
+
   salvar: async (chave: string, valor: string) => {
     return ConfiguracaoRepository.salvar(chave, valor);
   },

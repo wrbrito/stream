@@ -133,7 +133,10 @@ export const VideoRepository = {
     return prisma.$transaction([
       prisma.visualizacao.deleteMany({ where: { videoId: id } }),
       prisma.favorito.deleteMany({ where: { videoId: id } }),
+      prisma.avaliacao.deleteMany({ where: { videoId: id } }),
       prisma.processamento.deleteMany({ where: { videoId: id } }),
+      prisma.comentario.deleteMany({ where: { videoId: id, parentId: { not: null } } }),
+      prisma.comentario.deleteMany({ where: { videoId: id } }),
       prisma.video.delete({ where: { id } }),
     ]);
   },

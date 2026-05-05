@@ -19,6 +19,7 @@ export const UsuarioRepository = {
         perfil: true,
         ativo: true,
         podeComentar: true,
+        fotoPerfil: true,
         criadoEm: true,
       },
     });
@@ -31,7 +32,15 @@ export const UsuarioRepository = {
     });
   },
 
-  criar: async (dados: { nome: string; email: string; senha: string; perfil: string }) => {
+  criar: async (dados: {
+    nome: string;
+    email: string;
+    senha: string;
+    perfil: string;
+    fotoPerfil?: string | null;
+    ativo?: boolean;
+    podeComentar?: boolean;
+  }) => {
     return prisma.usuario.create({
       data: dados,
     });
@@ -45,22 +54,33 @@ export const UsuarioRepository = {
   },
 
   deletar: async (id: number) => {
-    // Buscar o primeiro ADMIN que não seja o usuário a ser deletado para herdar os vídeos
     const admin = await prisma.usuario.findFirst({
       where: { perfil: 'ADMIN', id: { not: id } },
-      orderBy: { id: 'asc' }
+      orderBy: { id: 'asc' },
     });
 
-    return prisma.$transaction([
-      prisma.visualizacao.deleteMany({ where: { usuarioId: id } }),
-      prisma.favorito.deleteMany({ where: { usuarioId: id } }),
-      prisma.notification.deleteMany({ where: { usuarioId: id } }),
-      prisma.comentario.deleteMany({ where: { usuarioId: id } }),
-      prisma.avaliacao.deleteMany({ where: { usuarioId: id } }),
-      // Reatribui os vídeos do usuário para o admin (ou mantém se for o último, mas isso não deve acontecer)
-      ...(admin ? [prisma.video.updateMany({ where: { uploaderId: id }, data: { uploaderId: admin.id } })] : []),
-      prisma.usuario.delete({ where: { id } })
-    ]);
+    return prisma.$transaction(async (tx) => {
+      const comentarios = await tx.comentario.findMany({
+        where: { usuarioId: id },
+        select: { id: true },
+      });
+      const comentarioIds = comentarios.map((comentario) => comentario.id);
+
+      await tx.visualizacao.deleteMany({ where: { usuarioId: id } });
+      await tx.favorito.deleteMany({ where: { usuarioId: id } });
+      await tx.notification.deleteMany({ where: { usuarioId: id } });
+      await tx.avaliacao.deleteMany({ where: { usuarioId: id } });
+
+      if (comentarioIds.length > 0) {
+        await tx.comentario.deleteMany({ where: { parentId: { in: comentarioIds } } });
+        await tx.comentario.deleteMany({ where: { id: { in: comentarioIds } } });
+      }
+
+      if (admin) {
+        await tx.video.updateMany({ where: { uploaderId: id }, data: { uploaderId: admin.id } });
+      }
+
+      return tx.usuario.delete({ where: { id } });
+    });
   },
 };
-

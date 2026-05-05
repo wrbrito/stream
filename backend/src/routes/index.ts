@@ -7,6 +7,8 @@ import { adminRouter } from './admin.routes.js';
 import { notificationsRouter } from './notifications.routes.js';
 import { comentariosRouter } from './comentarios.routes.js';
 import { avaliacoesRouter } from './avaliacoes.routes.js';
+import { ConfiguracaoController } from '../controllers/configuracao.controller.js';
+import { profileRouter } from './profile.routes.js';
 
 const apiRouter = Router();
 
@@ -18,5 +20,7 @@ apiRouter.use('/admin', adminRouter);
 apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/comentarios', comentariosRouter);
 apiRouter.use('/avaliacoes', avaliacoesRouter);
+apiRouter.use('/profile', profileRouter);
+apiRouter.get('/configuracoes/publicas', ConfiguracaoController.listarPublicas);
 
 export { apiRouter };
