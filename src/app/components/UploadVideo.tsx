@@ -26,6 +26,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
   const [metadataLoaded, setMetadataLoaded] = useState(false);
   const [categoriesList, setCategoriesList] = useState<{ id: number, nome: string }[]>([]);
 
+    useEffect(() => {
     async function loadInitialData() {
       try {
         const catResponse = await api.categorias.listar();
