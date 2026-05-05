@@ -9,6 +9,10 @@ const app = express();
 
 // Configurar CORS para aceitar múltiplas portas do localhost durante desenvolvimento
 const allowedOrigins = [
+  'http://192.168.18.77:5173',
+  'http://192.168.18.77:5174',
+  'http://192.168.90.140:5173',
+  'http://192.168.90.140:5174',
   env.APP_URL,
   'http://localhost:5173',
   'http://localhost:5174',
