@@ -173,79 +173,11 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         }
       }
 
-      localStorage.setItem('stream_videos_cache', JSON.stringify(videosApi));
       setVideos(videosApi);
     } catch (err) {
-      console.error('API offline, usando cache/mock:', err);
-
-      const cacheStr = localStorage.getItem('stream_videos_cache');
-      if (cacheStr) {
-        try {
-          const videosCache = JSON.parse(cacheStr) as Video[];
-          setVideos(videosCache);
-        } catch {
-          // Cache corrompido
-        }
-      } else {
-        const mockVideos: Video[] = [
-          {
-            id: 1,
-            titulo: 'Aula de Matemática - Funções Quadráticas',
-            categoria: { nome: 'Aulas' },
-            autor: 'Prof. João Silva',
-            visualizacoes: 1250,
-            tipo: 'internal',
-            thumbnail: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600',
-          },
-          {
-            id: 2,
-            titulo: 'Workshop React + TypeScript Avançado',
-            categoria: { nome: 'Formações' },
-            autor: 'Profª Maria Santos',
-            visualizacoes: 890,
-            tipo: 'youtube',
-            thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
-          },
-          {
-            id: 3,
-            titulo: 'Reunião Pedagógica - Planejamento 2024',
-            categoria: { nome: 'Eventos' },
-            autor: 'Direção Escolar',
-            visualizacoes: 340,
-            tipo: 'internal',
-            thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600',
-          },
-          {
-            id: 4,
-            titulo: 'Projeto Ciência - Experimento Químico',
-            categoria: { nome: 'Projetos' },
-            autor: 'Prof. Carlos Oliveira',
-            visualizacoes: 670,
-            tipo: 'internal',
-            thumbnail: 'https://images.unsplash.com/photo-1544716240-2f0d42b0f947?w=600',
-          },
-          {
-            id: 5,
-            titulo: 'Aviso Importante - Calendário Escolar',
-            categoria: { nome: 'Avisos' },
-            autor: 'Secretaria',
-            visualizacoes: 2100,
-            tipo: 'internal',
-            thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600',
-          },
-          {
-            id: 6,
-            titulo: 'Live Q&A - Dúvidas Matemática',
-            categoria: { nome: 'Aulas' },
-            autor: 'Prof. João Silva',
-            visualizacoes: 450,
-            tipo: 'youtube',
-            thumbnail: 'https://img.youtube.com/vi/beKof55V8UY/hqdefault.jpg',
-          },
-        ];
-        setVideos(mockVideos);
-      }
-      setError('Usando dados demo (backend offline)');
+      console.error('Erro ao carregar vídeos:', err);
+      setError('Não foi possível carregar vídeos. Tente novamente mais tarde.');
+      setVideos([]);
     } finally {
       setLoading(false);
       setSearching(false);

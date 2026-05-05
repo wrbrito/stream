@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Sun, Moon, Upload, Bell, User, LogOut, LogIn, Video, Check } from 'lucide-react';
+import { Search, Sun, Moon, Upload, Bell, User, LogOut, Video, Check } from 'lucide-react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { NotificationsProvider, useNotifications } from '../contexts/NotificationsContext';
 
@@ -226,7 +226,7 @@ function AppContent() {
               </Button>
             ) : (
               <Button variant="ghost" size="icon" onClick={() => setCurrentScreen('login')} title="Fazer login" className="rounded-xl">
-                <LogIn className="w-5 h-5" />
+                <User className="w-5 h-5" />
               </Button>
             )}
 

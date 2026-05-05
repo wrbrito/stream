@@ -9,9 +9,9 @@ import { upload } from '../utils/upload.js';
 const videosRouter = Router();
 
 videosRouter.post('/metadados-youtube', autenticar, VideosController.buscarMetadadosYoutube);
-videosRouter.get('/', autenticar, VideosController.listar);
+videosRouter.get('/', VideosController.listar);
 videosRouter.get('/favoritos/me', autenticar, VideosController.listarFavoritos);
-videosRouter.get('/:id', autenticar, validar(videoIdSchema), VideosController.buscarPorId);
+videosRouter.get('/:id', validar(videoIdSchema), VideosController.buscarPorId);
 videosRouter.get('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.verificarFavorito);
 videosRouter.post('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.favoritar);
 videosRouter.delete('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.desfavoritar);
