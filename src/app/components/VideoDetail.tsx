@@ -24,6 +24,24 @@ interface ApiVideo {
     nome?: string;
   };
   visualizacoes?: unknown[] | number;
+  uploaderId?: number;
+  uploader?: {
+    id: number;
+  };
+}
+
+interface Comentario {
+  id: number;
+  texto: string;
+  usuarioId: number;
+  criadoEm: string;
+  usuario: {
+    id: number;
+    nome: string;
+    perfil: string;
+    fotoPerfil?: string | null;
+  };
+  respostas?: Comentario[];
 }
 
 function extrairYoutubeId(url?: string | null): string | null {
@@ -75,8 +93,10 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   const [formTitulo, setFormTitulo] = useState('');
   const [formDescricao, setFormDescricao] = useState('');
   const [globalConfigs, setGlobalConfigs] = useState<Record<string, string>>({});
-  const [comentarios, setComentarios] = useState<any[]>([]);
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [comentarioTexto, setComentarioTexto] = useState('');
+  const [respostaTexto, setRespostaTexto] = useState<Record<number, string>>({});
+  const [respondendoId, setRespondendoId] = useState<number | null>(null);
   const [enviandoComentario, setEnviandoComentario] = useState(false);
   const [statsAvaliacao, setStatsAvaliacao] = useState({ media: 0, total: 0, minhaNota: null as number | null });
   const [avaliando, setAvaliando] = useState(false);
@@ -114,7 +134,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
             });
           }
         }
-        const configResponse = await api.admin.listarConfiguracoes().catch(() => null);
+        const configResponse = await api.configuracoes.publicas().catch(() => null);
         if (ativo && configResponse?.sucesso && configResponse.dados) {
           setGlobalConfigs(configResponse.dados as Record<string, string>);
         }
@@ -126,7 +146,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
         ]);
 
         if (ativo) {
-          setComentarios((comentariosResp.dados as any[]) || []);
+          setComentarios((comentariosResp.dados as Comentario[]) || []);
           setStatsAvaliacao((avaliacoesResp.dados as any) || { media: 0, total: 0, minhaNota: null });
         }
       } catch (erro) {
@@ -264,11 +284,59 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
     }
   };
 
+  const handleEnviarResposta = async (comentarioId: number) => {
+    const texto = respostaTexto[comentarioId]?.trim();
+    if (!texto) return;
+
+    try {
+      const response = await api.comentarios.criar(videoId, texto, comentarioId);
+      const resposta = response.dados as Comentario;
+      setComentarios((prev) =>
+        prev.map((comentario) =>
+          comentario.id === comentarioId
+            ? { ...comentario, respostas: [...(comentario.respostas ?? []), resposta] }
+            : comentario
+        )
+      );
+      setRespostaTexto((prev) => ({ ...prev, [comentarioId]: '' }));
+      setRespondendoId(null);
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    }
+  };
+
+  const handleEditarComentario = async (id: number, textoAtual: string) => {
+    const texto = window.prompt('Editar comentario', textoAtual);
+    if (!texto || !texto.trim()) return;
+
+    try {
+      const response = await api.comentarios.atualizar(id, texto.trim());
+      const atualizado = response.dados as Comentario;
+      setComentarios((prev) =>
+        prev.map((comentario) => {
+          if (comentario.id === id) return { ...comentario, texto: atualizado.texto };
+          return {
+            ...comentario,
+            respostas: comentario.respostas?.map((resposta) =>
+              resposta.id === id ? { ...resposta, texto: atualizado.texto } : resposta
+            ),
+          };
+        })
+      );
+    } catch (erro) {
+      alert(tratarErroApi(erro));
+    }
+  };
+
   const handleExcluirComentario = async (id: number) => {
     if (!window.confirm('Deseja excluir este comentário?')) return;
     try {
       await api.comentarios.deletar(id);
-      setComentarios((prev) => prev.filter((c) => c.id !== id));
+      setComentarios((prev) =>
+        prev
+          .filter((c) => c.id !== id)
+          .map((c) => ({ ...c, respostas: c.respostas?.filter((resposta) => resposta.id !== id) }))
+      );
     } catch (erro) {
       alert(tratarErroApi(erro));
     }
@@ -338,8 +406,8 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                 )}
                 {/* Marca d'água UI */}
                 {(() => {
-                  const pos = globalConfigs.WATERMARK_POSITION || 'BOTTOM_LEFT';
-                  const text = globalConfigs.WATERMARK_TEXT || 'PLATAFORMA ESCOLAR';
+                  const pos = globalConfigs.WATERMARK_POSITION || globalConfigs.MARCA_DAGUA_POSICAO || 'BOTTOM_LEFT';
+                  const text = globalConfigs.WATERMARK_TEXT || globalConfigs.MARCA_DAGUA_TEXTO || 'PLATAFORMA ESCOLAR';
                   
                   let positionClasses = 'bottom-4 left-4';
                   if (pos === 'TOP_LEFT') positionClasses = 'top-4 left-4';
@@ -536,18 +604,85 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                             </span>
                           </div>
                           {(usuario?.perfil === 'ADMIN' || usuario?.id === comentario.usuarioId) && (
-                            <button
-                              onClick={() => handleExcluirComentario(comentario.id)}
-                              className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Excluir comentário"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleEditarComentario(comentario.id, comentario.texto)}
+                                className="text-xs text-muted-foreground hover:text-primary"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleExcluirComentario(comentario.id)}
+                                className="text-muted-foreground hover:text-destructive"
+                                title="Excluir comentário"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           )}
                         </div>
                         <p className="text-sm text-foreground leading-relaxed">
                           {comentario.texto}
                         </p>
+                        {usuario?.id === (video.uploaderId ?? video.uploader?.id) && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => setRespondendoId(respondendoId === comentario.id ? null : comentario.id)}
+                              className="text-xs font-medium text-primary hover:underline"
+                            >
+                              Responder
+                            </button>
+                          </div>
+                        )}
+                        {respondendoId === comentario.id && (
+                          <div className="mt-3 flex gap-2">
+                            <input
+                              value={respostaTexto[comentario.id] ?? ''}
+                              onChange={(e) => setRespostaTexto((prev) => ({ ...prev, [comentario.id]: e.target.value }))}
+                              className="flex-1 px-3 py-2 rounded-md border border-border bg-input-background text-sm"
+                              placeholder="Resposta do autor"
+                            />
+                            <Button size="sm" onClick={() => handleEnviarResposta(comentario.id)}>
+                              Enviar
+                            </Button>
+                          </div>
+                        )}
+                        {(comentario.respostas ?? []).length > 0 && (
+                          <div className="mt-4 space-y-3 border-l border-border pl-4">
+                            {(comentario.respostas ?? []).map((resposta) => (
+                              <div key={resposta.id} className="group/resposta">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm">{resposta.usuario.nome}</span>
+                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                      Autor
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(resposta.criadoEm).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {(usuario?.perfil === 'ADMIN' || usuario?.id === resposta.usuarioId) && (
+                                    <div className="flex items-center gap-2 opacity-0 group-hover/resposta:opacity-100 transition-opacity">
+                                      <button
+                                        onClick={() => handleEditarComentario(resposta.id, resposta.texto)}
+                                        className="text-xs text-muted-foreground hover:text-primary"
+                                      >
+                                        Editar
+                                      </button>
+                                      <button
+                                        onClick={() => handleExcluirComentario(resposta.id)}
+                                        className="text-muted-foreground hover:text-destructive"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-sm text-foreground leading-relaxed mt-1">{resposta.texto}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

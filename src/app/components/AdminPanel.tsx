@@ -35,7 +35,7 @@ interface AdminPanelProps {
   onSearchQueryChange?: (value: string) => void;
 }
 
-type MenuId = 'dashboard' | 'videos' | 'users' | 'categories' | 'reports' | 'settings';
+type MenuId = 'dashboard' | 'videos' | 'users' | 'categories' | 'comments' | 'reports' | 'settings';
 
 interface AdminVideo {
   id: number;
@@ -58,7 +58,20 @@ interface Usuario {
   perfil: string;
   ativo: boolean;
   podeComentar?: boolean;
+  fotoPerfil?: string | null;
   criadoEm: string;
+}
+
+interface AdminComentario {
+  id: number;
+  texto: string;
+  criadoEm: string;
+  usuarioId: number;
+  parentId?: number | null;
+  usuario?: { id: number; nome: string; email?: string };
+  video?: { id: number; titulo: string };
+  parent?: { id: number; texto: string } | null;
+  _count?: { respostas: number };
 }
 
 interface Categoria {
@@ -86,6 +99,7 @@ const menuItems: { id: MenuId; label: string; icon: typeof LayoutDashboard }[] =
   { id: 'videos', label: 'Videos', icon: Video },
   { id: 'users', label: 'Usuarios', icon: Users },
   { id: 'categories', label: 'Categorias', icon: FolderTree },
+  { id: 'comments', label: 'Comentarios', icon: MessageSquare },
   { id: 'reports', label: 'Relatorios', icon: BarChart3 },
   { id: 'settings', label: 'Configuracoes', icon: Settings },
 ];
@@ -111,6 +125,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [videos, setVideos] = useState<AdminVideo[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [comentarios, setComentarios] = useState<AdminComentario[]>([]);
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState('');
   const [tipo, setTipo] = useState('');
@@ -144,7 +159,17 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     urlOriginal: string;
   } | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [editingUserNome, setEditingUserNome] = useState('');
+  const [editingUserData, setEditingUserData] = useState({
+    nome: '',
+    email: '',
+    perfil: 'ALUNO',
+    senha: '',
+    ativo: true,
+    podeComentar: true,
+    fotoPerfil: '',
+  });
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingCategoryNome, setEditingCategoryNome] = useState('');
   const [editingCategoryDescricao, setEditingCategoryDescricao] = useState('');
@@ -155,10 +180,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [isSavingConfigs, setIsSavingConfigs] = useState(false);
   const [localWatermarkText, setLocalWatermarkText] = useState('');
   const [localWatermarkPosition, setLocalWatermarkPosition] = useState('');
+  const [localSiteName, setLocalSiteName] = useState('');
+  const [localLogoUrl, setLocalLogoUrl] = useState('');
 
   useEffect(() => {
     if (globalConfigs.WATERMARK_TEXT) setLocalWatermarkText(globalConfigs.WATERMARK_TEXT);
     if (globalConfigs.WATERMARK_POSITION) setLocalWatermarkPosition(globalConfigs.WATERMARK_POSITION);
+    if (globalConfigs.NOME_SITE) setLocalSiteName(globalConfigs.NOME_SITE);
+    if (globalConfigs.LOGO_URL) setLocalLogoUrl(globalConfigs.LOGO_URL);
   }, [globalConfigs]);
 
 
@@ -192,11 +221,12 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
       setLoading(true);
       setError('');
 
-      const [dashboardResponse, videosResponse, usuariosResponse, categoriasResponse] = await Promise.all([
+      const [dashboardResponse, videosResponse, usuariosResponse, categoriasResponse, comentariosResponse] = await Promise.all([
         api.admin.dashboard(),
         api.videos.listar(pagina, limite === -1 ? 9999 : limite),
         api.usuarios.listar(), // Usuarios ainda não tem paginação no backend, mas vamos simular ou preparar
         api.categorias.listar(),
+        api.admin.listarComentarios(),
       ]);
 
       const videosPayload = videosResponse.dados as { videos?: AdminVideo[]; total?: number } | AdminVideo[] | undefined;
@@ -207,11 +237,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
       setVideos(listaVideos);
       setUsuarios((usuariosResponse.dados as Usuario[]) ?? []);
       setCategorias((categoriasResponse.dados as Categoria[]) ?? []);
+      setComentarios((comentariosResponse.dados as AdminComentario[]) ?? []);
       
       if (activeMenu === 'videos') {
         setTotalItens(totalVideos);
       } else if (activeMenu === 'users') {
         setTotalItens((usuariosResponse.dados as Usuario[])?.length ?? 0);
+      } else if (activeMenu === 'comments') {
+        setTotalItens((comentariosResponse.dados as AdminComentario[])?.length ?? 0);
       }
 
       await carregarConfiguracoes();
@@ -309,20 +342,47 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
 
   const handleStartEditUser = (usuario: Usuario) => {
     setEditingUserId(usuario.id);
-    setEditingUserNome(usuario.nome);
+    setEditingUserData({
+      nome: usuario.nome,
+      email: usuario.email,
+      perfil: usuario.perfil,
+      senha: '',
+      ativo: usuario.ativo,
+      podeComentar: usuario.podeComentar !== false,
+      fotoPerfil: usuario.fotoPerfil ?? '',
+    });
     setShowAddUser(false);
   };
 
   const handleCancelEditUser = () => {
     setEditingUserId(null);
-    setEditingUserNome('');
+    setEditingUserData({
+      nome: '',
+      email: '',
+      perfil: 'ALUNO',
+      senha: '',
+      ativo: true,
+      podeComentar: true,
+      fotoPerfil: '',
+    });
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUserId) return;
     try {
-      await api.usuarios.atualizar(editingUserId, { nome: editingUserNome });
+      const updates: Record<string, unknown> = {
+        nome: editingUserData.nome,
+        email: editingUserData.email,
+        perfil: editingUserData.perfil,
+        ativo: editingUserData.ativo,
+        podeComentar: editingUserData.podeComentar,
+        fotoPerfil: editingUserData.fotoPerfil || null,
+      };
+      if (editingUserData.senha.trim()) {
+        updates.senha = editingUserData.senha.trim();
+      }
+      await api.usuarios.atualizar(editingUserId, updates);
       handleCancelEditUser();
       await carregarDados();
     } catch (error) {
@@ -777,10 +837,69 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                   <input
                     type="text"
                     required
-                    value={editingUserNome}
-                    onChange={(e) => setEditingUserNome(e.target.value)}
+                    value={editingUserData.nome}
+                    onChange={(e) => setEditingUserData((prev) => ({ ...prev, nome: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-md bg-input-background"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">E-mail</label>
+                  <input
+                    type="email"
+                    required
+                    value={editingUserData.email}
+                    onChange={(e) => setEditingUserData((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Perfil</label>
+                  <select
+                    value={editingUserData.perfil}
+                    onChange={(e) => setEditingUserData((prev) => ({ ...prev, perfil: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                  >
+                    <option value="ALUNO">Aluno</option>
+                    <option value="PROFESSOR">Professor</option>
+                    <option value="ADMIN">Administrador</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nova senha</label>
+                  <input
+                    type="password"
+                    value={editingUserData.senha}
+                    onChange={(e) => setEditingUserData((prev) => ({ ...prev, senha: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    placeholder="Deixe em branco para manter"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Foto de perfil</label>
+                  <input
+                    value={editingUserData.fotoPerfil}
+                    onChange={(e) => setEditingUserData((prev) => ({ ...prev, fotoPerfil: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="flex items-center gap-4 pt-6">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={editingUserData.ativo}
+                      onChange={(e) => setEditingUserData((prev) => ({ ...prev, ativo: e.target.checked }))}
+                    />
+                    Ativo
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={editingUserData.podeComentar}
+                      onChange={(e) => setEditingUserData((prev) => ({ ...prev, podeComentar: e.target.checked }))}
+                    />
+                    Pode comentar
+                  </label>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -945,6 +1064,98 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     );
   }
 
+  const handleStartEditComment = (comentario: AdminComentario) => {
+    setEditingCommentId(comentario.id);
+    setEditingCommentText(comentario.texto);
+  };
+
+  const handleSaveComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCommentId) return;
+    try {
+      await api.admin.atualizarComentario(editingCommentId, editingCommentText);
+      setEditingCommentId(null);
+      setEditingCommentText('');
+      await carregarDados();
+    } catch (error) {
+      setError(tratarErroApi(error));
+    }
+  };
+
+  const handleDeleteComment = async (id: number) => {
+    if (!confirm('Deseja realmente excluir este comentário?')) return;
+    try {
+      await api.admin.deletarComentario(id);
+      await carregarDados();
+    } catch (error) {
+      setError(tratarErroApi(error));
+    }
+  };
+
+  function ComentariosView() {
+    return (
+      <div className="space-y-4">
+        {editingCommentId && (
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h3 className="font-semibold mb-4">Editar Comentário</h3>
+            <form onSubmit={handleSaveComment} className="space-y-4">
+              <textarea
+                value={editingCommentText}
+                onChange={(e) => setEditingCommentText(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md bg-input-background min-h-24"
+              />
+              <div className="flex gap-3">
+                <Button type="submit">Salvar</Button>
+                <Button variant="outline" onClick={() => setEditingCommentId(null)}>Cancelar</Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              <tr>
+                {['Comentário', 'Usuário', 'Vídeo', 'Tipo', 'Data', 'Ações'].map((coluna) => (
+                  <th key={coluna} className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {coluna}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {comentarios.map((comentario) => (
+                <tr key={comentario.id}>
+                  <td className="px-6 py-4 text-sm max-w-md">
+                    <p className="line-clamp-3">{comentario.texto}</p>
+                    {comentario._count?.respostas ? (
+                      <p className="text-xs text-muted-foreground mt-1">{comentario._count.respostas} resposta(s)</p>
+                    ) : null}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{comentario.usuario?.nome ?? '-'}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{comentario.video?.titulo ?? '-'}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{comentario.parentId ? 'Resposta' : 'Comentário'}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{formatarData(comentario.criadoEm)}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleStartEditComment(comentario)}>
+                        Editar
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={() => handleDeleteComment(comentario.id)}>
+                        Excluir
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {renderPagination()}
+      </div>
+    );
+  }
+
   function ReportsView() {
     const videosPorTipo = [
       { label: 'Internos', value: dashboard?.internos ?? 0 },
@@ -985,11 +1196,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     const handleSave = (e: React.FormEvent) => {
       e.preventDefault();
       salvarConfiguracoes({
+        NOME_SITE: localSiteName,
+        LOGO_URL: localLogoUrl,
         WATERMARK_TEXT: localWatermarkText,
         WATERMARK_POSITION: localWatermarkPosition,
+        MARCA_DAGUA_TEXTO: localWatermarkText,
+        MARCA_DAGUA_POSICAO: localWatermarkPosition,
       });
       // Atualiza também o seletor de importação para consistência imediata
-      setImportWatermarkPosition(localWatermarkPosition as any);
     };
 
     return (
@@ -1004,6 +1218,28 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
           </p>
 
           <form onSubmit={handleSave} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">Nome do site</label>
+              <input
+                type="text"
+                value={localSiteName}
+                onChange={(e) => setLocalSiteName(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Ex: Vídeos Escola"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">URL da logomarca</label>
+              <input
+                type="text"
+                value={localLogoUrl}
+                onChange={(e) => setLocalLogoUrl(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="https://... ou /uploads/..."
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2 text-foreground">Texto da Marca D'água</label>
               <input
@@ -1067,6 +1303,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     if (activeMenu === 'videos') return VideosTable();
     if (activeMenu === 'users') return UsuariosView();
     if (activeMenu === 'categories') return CategoriasView();
+    if (activeMenu === 'comments') return ComentariosView();
     if (activeMenu === 'reports') return ReportsView();
     if (activeMenu === 'settings') return SettingsView();
 
