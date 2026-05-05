@@ -117,7 +117,6 @@ function normalizarVideo(video: ApiVideo): Video {
 export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [destaques, setDestaques] = useState<Video[]>([]);
-  const [favoritos, setFavoritos] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -280,29 +279,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
     setPagina(1);
   }, [searchQuery, selectedCategoryId]);
 
-  useEffect(() => {
-    let ativo = true;
-    async function carregarFavoritos() {
-      try {
-        const response = await api.videos.listarFavoritos();
-        const dados = (response.dados as ApiVideo[] | undefined) ?? [];
-        if (ativo) {
-          setFavoritos(dados.map((video) => video.id));
-        }
-      } catch {
-        if (ativo) {
-          setFavoritos([]);
-        }
-      }
-    }
-    carregarFavoritos();
-    return () => {
-      ativo = false;
-    };
-  }, []);
-
   const filteredVideos = videos;
-  const videosFavoritos = filteredVideos.filter((video) => favoritos.includes(video.id));
 
   if (loading) {
     return (
@@ -342,32 +319,6 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
               </button>
             ))}
           </div>
-        </section>
-
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2>Meus Favoritos</h2>
-          </div>
-          {videosFavoritos.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
-              Você ainda não favoritou vídeos ou eles não correspondem ao filtro atual.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {videosFavoritos.map((video) => (
-                <VideoCard
-                  key={`fav-${video.id}`}
-                  title={video.titulo}
-                  category={video.categoria.nome}
-                  author={video.autor}
-                  views={video.visualizacoes}
-                  type={video.tipo}
-                  thumbnail={video.thumbnail}
-                  onClick={() => onVideoClick(video.id)}
-                />
-              ))}
-            </div>
-          )}
         </section>
 
         {selectedCategoryId && (

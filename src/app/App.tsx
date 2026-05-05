@@ -12,6 +12,7 @@ import { NotificationsPage } from './components/NotificationsPage';
 import { Button } from './components/Button';
 import { Footer } from './components/Footer';
 import { ProfilePage } from './components/ProfilePage';
+import { api } from '../services/api';
 
 type Screen = 'login' | 'home' | 'video' | 'upload' | 'admin' | 'notifications' | 'profile';
 
@@ -22,6 +23,7 @@ function AppContent() {
   const { isAuthenticated, isLoading, logout, usuario } = useAuth();
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [configsPublicas, setConfigsPublicas] = useState<Record<string, string>>({});
   const [selectedNotification, setSelectedNotification] = useState<{
     id: number;
     titulo: string;
@@ -43,6 +45,25 @@ function AppContent() {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    let ativo = true;
+    api.configuracoes.publicas()
+      .then((response) => {
+        if (ativo && response.dados) {
+          const configs = response.dados as Record<string, string>;
+          setConfigsPublicas(configs);
+          if (configs.NOME_SITE) {
+            document.title = configs.NOME_SITE;
+          }
+        }
+      })
+      .catch(() => null);
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const handleVideoClick = (videoId: number) => {
     setSelectedVideoId(videoId);
@@ -79,6 +100,14 @@ function AppContent() {
     setCurrentScreen('login');
   };
 
+  const nomeSite = configsPublicas.NOME_SITE || 'Vídeos Escola';
+  const logoUrl = configsPublicas.LOGO_URL || '';
+  const logoCompleta = logoUrl
+    ? logoUrl.startsWith('/')
+      ? `${(import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace('/api', '')}${logoUrl}`
+      : logoUrl
+    : '';
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">Carregando...</div>;
   }
@@ -103,11 +132,15 @@ function AppContent() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           {/* Logo lado esquerdo */}
           <div className="flex items-center gap-3 min-w-fit cursor-pointer" onClick={handleBackToHome}>
-            <div className="bg-primary text-primary-foreground p-2 rounded-xl flex items-center justify-center">
-              <Video className="w-6 h-6" />
-            </div>
+            {logoCompleta ? (
+              <img src={logoCompleta} alt={nomeSite} className="w-10 h-10 rounded-xl object-cover border border-border" />
+            ) : (
+              <div className="bg-primary text-primary-foreground p-2 rounded-xl flex items-center justify-center">
+                <Video className="w-6 h-6" />
+              </div>
+            )}
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold text-foreground leading-tight">Vídeos Escola</h1>
+              <h1 className="text-xl font-bold text-foreground leading-tight">{nomeSite}</h1>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Plataforma Educacional</p>
             </div>
           </div>
@@ -265,10 +298,10 @@ function AppContent() {
           <NotificationsPage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
         )}
         {currentScreen === 'profile' && (
-          <ProfilePage onBack={handleBackToHome} />
+          <ProfilePage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
         )}
       </main>
-      <Footer />
+      <Footer nomeSite={nomeSite} logoUrl={logoCompleta} />
     </div>
     </>
   );

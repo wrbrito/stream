@@ -1,16 +1,25 @@
 import { Video, Github, Twitter, Linkedin, Mail } from 'lucide-react';
 
-export function Footer() {
+interface FooterProps {
+  nomeSite?: string;
+  logoUrl?: string;
+}
+
+export function Footer({ nomeSite = 'StreamEscola', logoUrl = '' }: FooterProps) {
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Video className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">StreamEscola</span>
+              {logoUrl ? (
+                <img src={logoUrl} alt={nomeSite} className="w-8 h-8 rounded-lg object-cover border border-border" />
+              ) : (
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <Video className="w-5 h-5 text-primary-foreground" />
+                </div>
+              )}
+              <span className="text-xl font-bold text-foreground">{nomeSite}</span>
             </div>
             <p className="text-sm text-muted-foreground">
               A maior plataforma de conteúdos educacionais em vídeo para sua instituição.
@@ -56,7 +65,7 @@ export function Footer() {
                 <span>suporte@escola.com</span>
               </li>
               <li className="text-xs mt-4">
-                © 2026 StreamEscola. Todos os direitos reservados.
+                © 2026 {nomeSite}. Todos os direitos reservados.
               </li>
             </ul>
           </div>
