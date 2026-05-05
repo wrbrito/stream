@@ -1,3 +1,24 @@
+05/05/2026
+
+- assim que acessar o sistema, ele não pedirá login, irá abrir a tela inicial do site, permitindo assistir os videos sem a necessidade de login.
+- se o usuario quiser comentar, avaliar, denunciar, favoritar, ele deve fazer login primeiro. 
+- icone de login ao inves do bonequinho, o bonequinho só aparece depois de logado
+======
+Sempre responder e pensar em portugues
+após cada alteração, fazer commit e push em portugues
+
+- o admin ao clicar em editar usuario, deve poder editar todos os dados do usuario
+- o admin ao clicar em editar video, deve poder editar todos os dados do video
+- o admin ao clicar em editar categoria, deve poder editar todos os dados da categoria
+- o admin ao clicar em editar comentario, deve poder editar todos os dados do comentario
+- deve ser possivel o autor do video poder responder os comentarios feitos nos videos do proprio autor, e somente ele
+- o perfil do usuario deve aparecer de forma mais completa, inclusive como mudar a foto, usuario, senha... deve exibir os videos que ele gosta, os videos que ele comentou, os videos que ele avaliou
+- a marca d'agua dos videos no perfil de qualquer usuario, deve ficar fixa no local onde o admin escolher
+- o favoritos deve aparecer na pagina de perfil do usuario, e deve exibir os videos que ele gosta, e não mais na pagina inicial depois do login
+- o admin deve poder alterar qualquer coisa dentro da plataforma, inclusive a logomarca, e cores de sites, e o que mais ele quiser de acordo com a identidade visual
+- alterar a logomarca no canto superior esquerdo, mudar o nome.
+- no rodape, não é streamescola, deve ser o mesmo da logomarca no canto superior esquerdo
+===========
 04/05/2026
 Sempre responder e pensar em portugues
 após cada alteração, fazer commit e push em portugues

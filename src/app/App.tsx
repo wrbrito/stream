@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Sun, Moon, Upload, Bell, User, LogOut, Video, Check } from 'lucide-react';
+import { Search, Sun, Moon, Upload, Bell, User, LogOut, LogIn, Video, Check } from 'lucide-react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { NotificationsProvider, useNotifications } from '../contexts/NotificationsContext';
 
@@ -112,19 +112,6 @@ function AppContent() {
     return <div className="min-h-screen flex items-center justify-center bg-background">Carregando...</div>;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <div className="fixed top-4 right-4 z-[100]">
-          <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
-            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
-        </div>
-        <Login onLogin={() => setCurrentScreen('home')} />
-      </>
-    );
-  }
-
   return (
     <>
     <div className="min-h-screen flex flex-col bg-background">
@@ -231,15 +218,23 @@ function AppContent() {
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
             
-            <Button variant="ghost" size="icon" onClick={handleAdminClick} title={usuario?.perfil === 'ADMIN' ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform hover:scale-110">
-                <User className="w-5 h-5" />
-              </div>
-            </Button>
+            {isAuthenticated ? (
+              <Button variant="ghost" size="icon" onClick={handleAdminClick} title={usuario?.perfil === 'ADMIN' ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform hover:scale-110">
+                  <User className="w-5 h-5" />
+                </div>
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={() => setCurrentScreen('login')} title="Fazer login" className="rounded-xl">
+                <LogIn className="w-5 h-5" />
+              </Button>
+            )}
 
-            <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" className="rounded-xl hover:text-destructive">
-              <LogOut className="w-5 h-5" />
-            </Button>
+            {isAuthenticated && (
+              <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair" className="rounded-xl hover:text-destructive">
+                <LogOut className="w-5 h-5" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -271,6 +266,11 @@ function AppContent() {
       )}
 
       <main className="flex-1">
+        {currentScreen === 'login' && (
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <Login onLogin={() => setCurrentScreen('home')} />
+          </div>
+        )}
         {currentScreen === 'home' && (
           <Home
             onVideoClick={handleVideoClick}

@@ -176,6 +176,10 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
         : null;
 
   const handleFavoritar = async () => {
+    if (!usuario) {
+      alert('Você precisa fazer login para favoritar vídeos.');
+      return;
+    }
     try {
       setFavoritoLoading(true);
       if (isFavorito) {
@@ -195,6 +199,10 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   };
 
   const handleDenunciar = async () => {
+    if (!usuario) {
+      alert('Você precisa fazer login para denunciar vídeos.');
+      return;
+    }
     try {
       await api.videos.denunciar(videoId);
       alert('Obrigado. Sua denúncia foi enviada para a equipe administrativa.');
@@ -270,6 +278,10 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
 
   const handleEnviarComentario = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!usuario) {
+      alert('Você precisa fazer login para comentar.');
+      return;
+    }
     if (!comentarioTexto.trim()) return;
 
     try {
@@ -343,6 +355,10 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   };
 
   const handleAvaliar = async (nota: number) => {
+    if (!usuario) {
+      alert('Você precisa fazer login para avaliar vídeos.');
+      return;
+    }
     try {
       setAvaliando(true);
       const response = await api.avaliacoes.avaliar(videoId, nota);
@@ -451,7 +467,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
               </div>
 
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border flex-wrap">
-                <Button variant="outline" size="sm" onClick={handleFavoritar} disabled={favoritoLoading}>
+                <Button variant="outline" size="sm" onClick={handleFavoritar} disabled={favoritoLoading || !usuario} title={!usuario ? 'Faça login para favoritar' : ''}>
                   <Heart className="w-4 h-4" />
                   {isFavorito ? 'Desfavoritar' : 'Favoritar'}
                 </Button>
@@ -459,7 +475,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                   <Share2 className="w-4 h-4" />
                   Compartilhar
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleDenunciar}>
+                <Button variant="ghost" size="sm" onClick={handleDenunciar} disabled={!usuario} title={!usuario ? 'Faça login para denunciar' : ''}>
                   <Flag className="w-4 h-4" />
                   Denunciar
                 </Button>
@@ -536,9 +552,10 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
-                      disabled={avaliando}
+                      disabled={avaliando || !usuario}
                       onClick={() => handleAvaliar(star)}
-                      className={`p-1 transition-transform hover:scale-110 ${avaliando ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`p-1 transition-transform hover:scale-110 ${avaliando || !usuario ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={!usuario ? 'Faça login para avaliar' : ''}
                     >
                       <Star
                         className={`w-8 h-8 ${
@@ -565,17 +582,18 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                 <form onSubmit={handleEnviarComentario} className="mb-8">
                   <div className="flex gap-4">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold shrink-0">
-                      {usuario?.nome[0]}
+                      {usuario ? usuario.nome[0] : '?'}
                     </div>
                     <div className="flex-1">
                       <textarea
                         value={comentarioTexto}
                         onChange={(e) => setComentarioTexto(e.target.value)}
-                        placeholder="Escreva um comentário..."
-                        className="w-full bg-input-background border border-border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px]"
+                        placeholder={usuario ? "Escreva um comentário..." : "Faça login para comentar"}
+                        disabled={!usuario}
+                        className="w-full bg-input-background border border-border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px] disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <div className="mt-2 flex justify-end">
-                        <Button type="submit" size="sm" disabled={enviandoComentario || !comentarioTexto.trim()}>
+                        <Button type="submit" size="sm" disabled={enviandoComentario || !comentarioTexto.trim() || !usuario}>
                           <Send className="w-4 h-4" />
                           {enviandoComentario ? 'Enviando...' : 'Comentar'}
                         </Button>
