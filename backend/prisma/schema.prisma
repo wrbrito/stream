@@ -24,6 +24,7 @@ model Usuario {
   perfil     String @default("ALUNO")
   ativo      Boolean   @default(true)
   podeComentar Boolean @default(true)
+  fotoPerfil String?
   criadoEm   DateTime  @default(now())
   videos     Video[]
   visualizacoes Visualizacao[]
@@ -118,6 +119,9 @@ model Comentario {
   usuarioId Int
   video     Video    @relation(fields: [videoId], references: [id])
   videoId   Int
+  parentId  Int?
+  parent    Comentario?  @relation("Respostas", fields: [parentId], references: [id])
+  respostas Comentario[] @relation("Respostas")
   criadoEm  DateTime @default(now())
 }
 
