@@ -135,11 +135,12 @@ export const api = {
       headers,
     });
 
-    // Se token expirou (401), redirecionar para login
+    // Se token expirou (401), limpar credenciais e evitar redirecionamento de rota
     if (response.status === 401) {
       api.clearAuth();
-      // Redirecionar para login (implementar conforme sua rota)
-      window.location.href = '/login';
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
       throw new Error('Sessão expirada. Por favor, faça login novamente.');
     }
 
