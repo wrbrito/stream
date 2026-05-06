@@ -78,7 +78,22 @@ function contarVisualizacoes(valor: ApiVideo['visualizacoes']) {
   return Array.isArray(valor) ? valor.length : Number(valor ?? 0);
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4000';
+// Construir URL base dinamicamente baseada no host atual
+const getBaseUrl = (): string => {
+  // Se houver variável de ambiente definida, usar ela
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace('/api', '');
+  }
+
+  // Caso contrário, usar o host/porta do navegador
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = 4000; // Porta padrão do backend
+
+  return `${protocol}//${hostname}:${port}`;
+};
+
+const BASE_URL = getBaseUrl();
 
 export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   const { usuario } = useAuth();
