@@ -19,6 +19,8 @@ function figmaAssetResolver() {
 export default defineConfig({
   server: {
     host: true,
+    allowedHosts: ['damastube']
+
   },
   plugins: [
     figmaAssetResolver(),

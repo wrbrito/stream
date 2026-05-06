@@ -12,9 +12,9 @@ após cada alteração, fazer commit e push em portugues
 
 05/05/2026
 
-- assim que acessar o sistema, ele não pedirá login, irá abrir a tela inicial do site, permitindo assistir os videos sem a necessidade de login.
-- se o usuario quiser comentar, avaliar, denunciar, favoritar, ele deve fazer login primeiro. 
-- icone de login ao inves do bonequinho, o bonequinho só aparece depois de logado
+- [x] assim que acessar o sistema, ele não pedirá login, irá abrir a tela inicial do site, permitindo assistir os videos sem a necessidade de login.
+- [x] se o usuario quiser comentar, avaliar, denunciar, favoritar, ele deve fazer login primeiro. 
+- [x] icone de login ao inves do bonequinho, o bonequinho só aparece depois de logado
 ======
 Sempre responder e pensar em portugues
 após cada alteração, fazer commit e push em portugues
