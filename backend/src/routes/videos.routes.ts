@@ -16,7 +16,7 @@ videosRouter.get('/:id/favorito', autenticar, validar(videoIdSchema), VideosCont
 videosRouter.post('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.favoritar);
 videosRouter.delete('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.desfavoritar);
 videosRouter.post('/:id/denunciar', autenticar, validar(videoIdSchema), VideosController.denunciar);
-videosRouter.post('/:id/visualizacoes', autenticar, validar(videoIdSchema), VideosController.registrarVisualizacao);
+videosRouter.post('/:id/visualizacoes', validar(videoIdSchema), VideosController.registrarVisualizacao);
 videosRouter.post(
   '/',
   autenticar,

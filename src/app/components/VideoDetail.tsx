@@ -116,9 +116,12 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
           setFormTitulo(dados.titulo);
           setFormDescricao(dados.descricao);
         }
-        const favoritoResponse = await api.videos.verificarFavorito(videoId);
-        if (ativo) {
-          setIsFavorito(Boolean((favoritoResponse.dados as { favorito?: boolean } | undefined)?.favorito));
+        // Só verificar favorito se usuário estiver logado
+        if (usuario) {
+          const favoritoResponse = await api.videos.verificarFavorito(videoId);
+          if (ativo) {
+            setIsFavorito(Boolean((favoritoResponse.dados as { favorito?: boolean } | undefined)?.favorito));
+          }
         }
         if (!visualizacoesRegistradas.current.has(videoId)) {
           visualizacoesRegistradas.current.add(videoId);
@@ -170,7 +173,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   const youtubeId = useMemo(() => extrairYoutubeId(video?.urlOriginal), [video?.urlOriginal]);
   const videoSrc =
     video?.tipo === 'YOUTUBE' && youtubeId
-      ? `https://www.youtube.com/embed/${youtubeId}`
+      ? `https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&origin=${window.location.origin}`
       : video?.caminhoArquivo
         ? `${BASE_URL}${video.caminhoArquivo}`
         : null;
@@ -196,6 +199,21 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
     } finally {
       setFavoritoLoading(false);
     }
+  };
+
+  const showYouTubeFallback = (container: HTMLElement, youtubeUrl: string) => {
+    container.innerHTML = `
+      <div class="w-full h-full flex flex-col items-center justify-center text-white bg-black">
+        <p class="mb-4 text-center px-4">
+          Este vídeo do YouTube não pode ser reproduzido diretamente.<br/>
+          Clique no botão abaixo para assistir no YouTube.
+        </p>
+        <a href="${youtubeUrl}" target="_blank" rel="noopener noreferrer"
+           class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+          🎥 Assistir no YouTube
+        </a>
+      </div>
+    `;
   };
 
   const handleDenunciar = async () => {
@@ -406,15 +424,53 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
             <div className="bg-card rounded-xl overflow-hidden border border-border shadow-lg mb-6">
               <div className="relative aspect-video bg-black">
                 {video.tipo === 'YOUTUBE' && videoSrc ? (
-                  <iframe
-                    src={videoSrc}
-                    title={video.titulo}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  <div className="w-full h-full">
+                    <iframe
+                      src={videoSrc}
+                      title={video.titulo}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      onLoad={(e) => {
+                        // Verificar se o iframe carregou corretamente
+                        try {
+                          const iframe = e.currentTarget;
+                          // Se o conteúdo do iframe for muito pequeno, provavelmente foi bloqueado
+                          if (iframe.contentWindow && iframe.contentDocument) {
+                            const contentHeight = iframe.contentDocument.body?.scrollHeight || 0;
+                            if (contentHeight < 100) {
+                              console.warn('YouTube embed parece ter sido bloqueado, mostrando fallback');
+                              showYouTubeFallback(iframe.parentElement!, video.urlOriginal!);
+                            }
+                          }
+                        } catch (error) {
+                          console.warn('Erro ao verificar iframe do YouTube:', error);
+                          showYouTubeFallback(e.currentTarget.parentElement!, video.urlOriginal!);
+                        }
+                      }}
+                      onError={(e) => {
+                        console.error('Erro ao carregar iframe do YouTube:', e);
+                        showYouTubeFallback(e.currentTarget.parentElement!, video.urlOriginal!);
+                      }}
+                    />
+                  </div>
                 ) : videoSrc ? (
                   <video src={videoSrc} className="w-full h-full" controls />
+                ) : video?.tipo === 'YOUTUBE' && video?.urlOriginal ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white bg-black">
+                    <p className="mb-4 text-center px-4">
+                      Este vídeo do YouTube não pode ser reproduzido diretamente.<br/>
+                      Clique no botão abaixo para assistir no YouTube.
+                    </p>
+                    <a
+                      href={video.urlOriginal}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                    >
+                      🎥 Assistir no YouTube
+                    </a>
+                  </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white">
                     Arquivo de video indisponivel

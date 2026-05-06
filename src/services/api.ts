@@ -3,7 +3,22 @@
  * Gerencia autenticação, tokens JWT e requisições à API backend
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+// Construir URL da API dinamicamente baseado no host atual
+const getApiBaseUrl = (): string => {
+  // Se houver variável de ambiente definida, usar ela
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Caso contrário, usar o host/porta do navegador
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = 4000; // Porta padrão do backend
+
+  return `${protocol}//${hostname}:${port}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T = unknown> {
   sucesso: boolean;
