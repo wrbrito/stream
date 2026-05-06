@@ -137,6 +137,9 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const { usuario } = useAuth();
 
+  const temFiltro = Boolean(searchQuery.trim() || selectedCategoryId);
+  const shouldShowDestaques = !temFiltro && pagina === 1;
+
   // Função reutilizável para buscar vídeos
   const fetchVideos = async (isInitial: boolean) => {
     try {
@@ -161,8 +164,8 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
       setTotalVideos(total);
       setTotalPaginas(Math.ceil(total / limite));
 
-      // Buscar destaques (populares) separadamente
-      if (!searchQuery && !selectedCategoryId && pagina === 1) {
+      // Buscar destaques (populares) separadamente apenas quando não houver busca/categoria ativa
+      if (shouldShowDestaques) {
         try {
           const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
           const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
@@ -171,6 +174,8 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         } catch (err) {
           console.error('Erro ao buscar destaques:', err);
         }
+      } else {
+        setDestaques([]);
       }
 
       setVideos(videosApi);
@@ -265,54 +270,87 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
           </div>
         )}
 
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2>Vídeos em Destaque</h2>
-            <button
-              className="text-primary hover:underline text-sm"
-              onClick={() => {
-                onSearchQueryChange('');
-                setSelectedCategoryId(null);
-              }}
-            >
-              Ver todos
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(destaques.length > 0 ? destaques : filteredVideos).slice(0, 3).map((video) => (
-              <VideoCard
-                key={`destaque-${video.id}`}
-                title={video.titulo}
-                category={video.categoria.nome}
-                author={video.autor}
-                views={video.visualizacoes}
-                type={video.tipo}
-                thumbnail={video.thumbnail}
-                onClick={() => onVideoClick(video.id)}
-              />
-            ))}
-          </div>
-        </section>
+        {temFiltro ? (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2>Resultados</h2>
+              <button
+                className="text-primary hover:underline text-sm"
+                onClick={() => {
+                  onSearchQueryChange('');
+                  setSelectedCategoryId(null);
+                }}
+              >
+                Ver todos
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVideos.map((video) => (
+                <VideoCard
+                  key={video.id}
+                  title={video.titulo}
+                  category={video.categoria.nome}
+                  author={video.autor}
+                  views={video.visualizacoes}
+                  type={video.tipo}
+                  thumbnail={video.thumbnail}
+                  onClick={() => onVideoClick(video.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <>
+            <section className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2>Vídeos em Destaque</h2>
+                <button
+                  className="text-primary hover:underline text-sm"
+                  onClick={() => {
+                    onSearchQueryChange('');
+                    setSelectedCategoryId(null);
+                  }}
+                >
+                  Ver todos
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {destaques.slice(0, 3).map((video) => (
+                  <VideoCard
+                    key={`destaque-${video.id}`}
+                    title={video.titulo}
+                    category={video.categoria.nome}
+                    author={video.autor}
+                    views={video.visualizacoes}
+                    type={video.tipo}
+                    thumbnail={video.thumbnail}
+                    onClick={() => onVideoClick(video.id)}
+                  />
+                ))}
+              </div>
+            </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2>Vídeos Recentes</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.map((video) => (
-              <VideoCard
-                key={video.id}
-                title={video.titulo}
-                category={video.categoria.nome}
-                author={video.autor}
-                views={video.visualizacoes}
-                type={video.tipo}
-                thumbnail={video.thumbnail}
-                onClick={() => onVideoClick(video.id)}
-              />
-            ))}
-          </div>
-        </section>
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2>Vídeos Recentes</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredVideos.map((video) => (
+                  <VideoCard
+                    key={video.id}
+                    title={video.titulo}
+                    category={video.categoria.nome}
+                    author={video.autor}
+                    views={video.visualizacoes}
+                    type={video.tipo}
+                    thumbnail={video.thumbnail}
+                    onClick={() => onVideoClick(video.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
 {error ? (
           <div className="text-center py-16">
