@@ -113,6 +113,8 @@ export const ProcessamentoService = {
       status: 'EM_ANDAMENTO',
     });
 
+    await VideoRepository.atualizar(id, { status: 'PROCESSANDO' });
+
     const posicaoFinal = posicaoMarcaDagua || (await ConfiguracaoService.obter('WATERMARK_POSITION', 'BOTTOM_LEFT')) as PosicaoMarcaDagua;
 
     try {

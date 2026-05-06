@@ -2,6 +2,10 @@
 Sempre responder e pensar em portugues
 após cada alteração, fazer commit e push em portugues
 
+- Verificar o download do youtube para o servidor interno, não esta funcionando... será que conseguimos pegar o link, ir no site que faz o download, baixar por lá e trazer para o servidor interno e deixar o video pronto para exibição...? Clico no botão importar com o administrador, mas não baixa nada...
+
+======
+
 - [x] Verificar no arquivo pendencias o que já foi feito e marcar o check como feito
 - [x] Corrigir o download de vídeo do YouTube para servidor interno e deixar o vídeo pronto para exibição na plataforma
 

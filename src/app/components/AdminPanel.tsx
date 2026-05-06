@@ -134,6 +134,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [pagina, setPagina] = useState(1);
   const [limite, setLimite] = useState(10);
   const [totalItens, setTotalItens] = useState(0);
+  const [importingVideoId, setImportingVideoId] = useState<number | null>(null);
 
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const { usuario } = useAuth();
@@ -332,11 +333,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
 
   const handleImportarVideo = async (id: number) => {
     try {
+      setImportingVideoId(id);
       await api.videos.importarYoutube(id);
       alert('Importação iniciada. O arquivo final será salvo em /uploads/videos (pasta backend/storage/videos).');
       await carregarDados();
     } catch (error) {
       setError(tratarErroApi(error));
+    } finally {
+      setImportingVideoId((current) => (current === id ? null : current));
     }
   };
 
@@ -655,7 +659,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>
-                {['Titulo', 'Tipo', 'Status', 'Categoria', 'Autor', 'Data', 'Visualizacoes', 'Arquivo', 'Download', 'Ações'].map((coluna) => (
+                {['Titulo', 'Tipo', 'Status', 'Importação', 'Categoria', 'Autor', 'Data', 'Visualizacoes', 'Arquivo', 'Download', 'Ações'].map((coluna) => (
                   <th key={coluna} className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     {coluna}
                   </th>
@@ -684,6 +688,33 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                         {config.label}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      {video.tipo === 'YOUTUBE' ? (
+                        importingVideoId === video.id || video.status === 'PROCESSANDO' ? (
+                          <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            <Loader className="w-3 h-3 animate-spin" />
+                            Importando...
+                          </span>
+                        ) : video.status === 'PENDENTE' ? (
+                          <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                            <AlertCircle className="w-3 h-3" />
+                            Aguardando importação
+                          </span>
+                        ) : video.status === 'ERRO' ? (
+                          <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            <XCircle className="w-3 h-3" />
+                            Falha na importação
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <CheckCircle className="w-3 h-3" />
+                            Importado
+                          </span>
+                        )
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{video.categoria?.nome ?? '-'}</td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{video.autor}</td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{formatarData(video.criadoEm)}</td>
@@ -692,7 +723,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                       {video.caminhoArquivo
                         ? video.caminhoArquivo
                         : video.tipo === 'YOUTUBE'
-                          ? 'Quando importar: /uploads/videos/...'
+                          ? 'Quando importar: /uploads/videos...'
                           : '-'}
                     </td>
                     <td className="px-6 py-4">
@@ -715,12 +746,16 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                         </button>
                       ) : (
                         <button
-                          className="p-1.5 hover:bg-accent rounded-md transition-colors"
+                          className="p-1.5 hover:bg-accent rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                           title="Importar para servidor"
                           onClick={() => handleImportarVideo(video.id)}
-                          disabled={video.status === 'PROCESSANDO'}
+                          disabled={video.status === 'PROCESSANDO' || importingVideoId === video.id}
                         >
-                          <DownloadCloud className="w-4 h-4 text-primary" />
+                          {importingVideoId === video.id ? (
+                            <Loader className="w-4 h-4 text-primary animate-spin" />
+                          ) : (
+                            <DownloadCloud className="w-4 h-4 text-primary" />
+                          )}
                         </button>
                       )}
                     </td>
