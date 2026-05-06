@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { env } from '../lib/env.js';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
-import ytdl from '@distube/ytdl-core';
+import ytdl from 'ytdl-core';
 import { ProcessamentoRepository } from '../repositories/processamento.repository.js';
 import { VideoRepository } from '../repositories/video.repository.js';
 import { ConfiguracaoService } from './configuracao.service.js';
@@ -18,32 +18,32 @@ async function garantirDiretorio(destino: string) {
 
 async function baixarYoutube(url: string, arquivoDestino: string) {
   await garantirDiretorio(arquivoDestino);
-  const info = await ytdl.getInfo(url, {
-    requestOptions: {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-      },
+
+  const requestOptions = {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
     },
-  });
+  };
+
+  const info = await ytdl.getInfo(url, { requestOptions });
 
   const formato =
     ytdl.chooseFormat(info.formats, { quality: 'highest', filter: 'audioandvideo' }) ||
     ytdl.chooseFormat(info.formats, { quality: 'highest', filter: 'audioonly' });
 
+  if (!formato) {
+    throw new Error('Nenhum formato reproduzível encontrado para o vídeo do YouTube');
+  }
+
   return new Promise<void>((resolve, reject) => {
     const videoStream = ytdl.downloadFromInfo(info, {
       format: formato,
       highWaterMark: 1 << 25,
-      requestOptions: {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        },
-      },
+      requestOptions,
     });
-    const writeStream = createWriteStream(arquivoDestino);
 
+    const writeStream = createWriteStream(arquivoDestino);
     videoStream.pipe(writeStream);
     videoStream.on('error', reject);
     writeStream.on('error', reject);
