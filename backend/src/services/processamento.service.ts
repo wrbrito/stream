@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { env } from '../lib/env.js';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
-import { exec } from 'youtube-dl-exec';
+import youtubedl from 'youtube-dl-exec';
 import { ProcessamentoRepository } from '../repositories/processamento.repository.js';
 import { VideoRepository } from '../repositories/video.repository.js';
 import { ConfiguracaoService } from './configuracao.service.js';
@@ -20,7 +20,7 @@ async function baixarYoutube(url: string, arquivoDestino: string) {
 
   try {
     // Tenta baixar com melhor qualidade disponível
-    await exec(url, {
+    await youtubedl.exec(url, {
       output: arquivoDestino,
       format: 'best[height<=720]', // Limita a 720p para reduzir tamanho
       noCheckCertificates: true,
@@ -31,7 +31,7 @@ async function baixarYoutube(url: string, arquivoDestino: string) {
   } catch (erro) {
     console.warn('Tentativa com formato limitado falhou, tentando formato best:', erro);
     // Fallback para melhor formato disponível
-    await exec(url, {
+    await youtubedl.exec(url, {
       output: arquivoDestino,
       format: 'best',
       noCheckCertificates: true,
