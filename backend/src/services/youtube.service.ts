@@ -8,9 +8,7 @@ export const YoutubeService = {
    */
   extrairIdVideo: (url: string): string | null => {
     const padroes = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-      /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+      /(?:youtu\.be\/|(?:www\.)?(?:youtube|ssyoutube|youtube-nocookie)\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/))([a-zA-Z0-9_-]{11})/,
     ];
 
     for (const padrao of padroes) {

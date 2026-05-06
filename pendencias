@@ -1,3 +1,15 @@
+06/05/2026
+Sempre responder e pensar em portugues
+após cada alteração, fazer commit e push em portugues
+
+- [x] Verificar no arquivo pendencias o que já foi feito e marcar o check como feito
+- [x] Corrigir o download de vídeo do YouTube para servidor interno e deixar o vídeo pronto para exibição na plataforma
+
+=====
+- notei que ao fazer uma busca pelos videos na pagina principal, o resultado é exibido logo depois de videos recentes, enquanto os videos em destaque ficam aparecendo acima, devemos priorizar o resultado das buscas nesse caso...
+- o mesmo ocorre quando clico nas categorias, os videos em destaque fica em cima e o resultado em baixo, devemos priorizar esse resultado trazendo para cima
+- os videos em destaque poderia ser em icones ao inves de cards
+
 05/05/2026
 
 - assim que acessar o sistema, ele não pedirá login, irá abrir a tela inicial do site, permitindo assistir os videos sem a necessidade de login.
