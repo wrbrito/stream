@@ -120,10 +120,20 @@ export const VideosController = {
     const body = (req.body ?? {}) as {
       posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
     };
-    VideoService.importarYoutube(id, body.posicaoMarcaDagua).catch((erro) => {
-      console.error('Erro assíncrono ao importar vídeo do YouTube:', erro);
-    });
-    return res.json({ sucesso: true, dados: { mensagem: 'Importação iniciada. O vídeo será processado em breve.' } });
+    try {
+      const video = await VideoService.buscarPorId(id);
+      if (!video || video.tipo !== 'YOUTUBE' || !video.urlOriginal) {
+        return res.status(400).json({ sucesso: false, erro: 'Apenas vídeos do YouTube com URL válida podem ser importados.' });
+      }
+
+      VideoService.importarYoutube(id, body.posicaoMarcaDagua).catch((erro) => {
+        console.error('Erro assíncrono ao importar vídeo do YouTube:', erro);
+      });
+      return res.json({ sucesso: true, dados: { mensagem: 'Importação iniciada. O vídeo será processado em breve.' } });
+    } catch (erro) {
+      console.error('Erro ao iniciar importação do vídeo do YouTube:', erro);
+      return res.status(500).json({ sucesso: false, erro: 'Erro ao iniciar a importação do vídeo do YouTube.' });
+    }
   },
 
   download: async (req: Request, res: Response) => {

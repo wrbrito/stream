@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { env } from '../lib/env.js';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import { ProcessamentoRepository } from '../repositories/processamento.repository.js';
 import { VideoRepository } from '../repositories/video.repository.js';
 import { ConfiguracaoService } from './configuracao.service.js';
