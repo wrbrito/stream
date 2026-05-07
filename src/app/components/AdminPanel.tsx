@@ -1351,6 +1351,101 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
             </div>
           </div>
         </div>
+
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Settings className="w-5 h-5 text-primary" />
+            Configurações de Página
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Controle a visibilidade de categorias e rodapé, além de configurar informações de contato.
+          </p>
+
+          <form className="space-y-4">
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localShowCategories}
+                  onChange={(e) => setLocalShowCategories(e.target.checked)}
+                  className="w-5 h-5 rounded border-border cursor-pointer"
+                />
+                <span className="text-sm font-medium text-foreground">Exibir categorias na página inicial</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localShowFooter}
+                  onChange={(e) => setLocalShowFooter(e.target.checked)}
+                  className="w-5 h-5 rounded border-border cursor-pointer"
+                />
+                <span className="text-sm font-medium text-foreground">Exibir rodapé</span>
+              </label>
+            </div>
+
+            <div className="border-t border-border pt-4 mt-4">
+              <h4 className="text-sm font-medium mb-4 text-foreground">Informações de Contato</h4>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Email de Suporte</label>
+                <input
+                  type="email"
+                  value={localSupportEmail}
+                  onChange={(e) => setLocalSupportEmail(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="suporte@seusite.com.br"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Gestor - Nome</label>
+                  <input
+                    type="text"
+                    value={localFooterGestor}
+                    onChange={(e) => setLocalFooterGestor(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Ex: Alberto Brasileiro"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Gestor - Email</label>
+                  <input
+                    type="email"
+                    value={localFooterGestorEmail}
+                    onChange={(e) => setLocalFooterGestorEmail(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="alberto@seusite.com.br"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Desenvolvedor - Nome</label>
+                  <input
+                    type="text"
+                    value={localFooterAutor}
+                    onChange={(e) => setLocalFooterAutor(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Ex: William Ramos de Brito"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Desenvolvedor - Email</label>
+                  <input
+                    type="email"
+                    value={localFooterAutorEmail}
+                    onChange={(e) => setLocalFooterAutorEmail(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="william@seusite.com.br"
+                  />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
