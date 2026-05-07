@@ -585,38 +585,38 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         </div>
 
         {editingVideoData && (
-          <div className="p-4 border-b border-border bg-muted/30">
+          <div className="p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
             <form onSubmit={handleSaveVideo} className="grid gap-4 md:grid-cols-2 items-end">
               <div>
-                <label className="block text-sm font-medium mb-2">Título</label>
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Título</label>
                 <input
                   value={editingVideoData.titulo}
                   onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, titulo: e.target.value } : prev)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Autor</label>
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Autor</label>
                 <input
                   value={editingVideoData.autor}
                   onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, autor: e.target.value } : prev)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Descrição</label>
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Descrição</label>
                 <textarea
                   value={editingVideoData.descricao}
                   onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, descricao: e.target.value } : prev)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background min-h-20"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Categoria</label>
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Categoria</label>
                 <select
                   value={editingVideoData.categoriaId ?? ''}
                   onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, categoriaId: Number(e.target.value) } : prev)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="">Selecione uma categoria</option>
                   {categorias.map((categoria) => (
@@ -627,22 +627,22 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Tipo</label>
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Tipo</label>
                 <select
                   value={editingVideoData.tipo}
                   onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, tipo: e.target.value } : prev)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="INTERNO">Interno</option>
                   <option value="YOUTUBE">YouTube</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Status</label>
                 <select
                   value={editingVideoData.status}
                   onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, status: e.target.value } : prev)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background"
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="ATIVO">Ativo</option>
                   <option value="PENDENTE">Pendente</option>
@@ -652,11 +652,11 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
               </div>
               {editingVideoData.tipo === 'YOUTUBE' && (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-2">URL original do YouTube</label>
+                  <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">URL original do YouTube</label>
                   <input
                     value={editingVideoData.urlOriginal}
                     onChange={(e) => setEditingVideoData((prev) => prev ? { ...prev, urlOriginal: e.target.value } : prev)}
-                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background"
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="https://www.youtube.com/watch?v=..."
                   />
                 </div>
@@ -878,35 +878,35 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
 
         {editingUserId && (
           <div className="bg-card border border-border rounded-xl p-6">
-            <h3 className="font-semibold mb-4">Editar Usuário</h3>
+            <h3 className="font-semibold mb-4 text-foreground dark:text-foreground">Editar Usuário</h3>
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Nome</label>
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">Nome</label>
                   <input
                     type="text"
                     required
                     value={editingUserData.nome}
                     onChange={(e) => setEditingUserData((prev) => ({ ...prev, nome: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">E-mail</label>
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">E-mail</label>
                   <input
                     type="email"
                     required
                     value={editingUserData.email}
                     onChange={(e) => setEditingUserData((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Perfil</label>
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">Perfil</label>
                   <select
                     value={editingUserData.perfil}
                     onChange={(e) => setEditingUserData((prev) => ({ ...prev, perfil: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="ALUNO">Aluno</option>
                     <option value="PROFESSOR">Professor</option>
@@ -914,26 +914,26 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Nova senha</label>
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">Nova senha</label>
                   <input
                     type="password"
                     value={editingUserData.senha}
                     onChange={(e) => setEditingUserData((prev) => ({ ...prev, senha: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="Deixe em branco para manter"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Foto de perfil</label>
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">Foto de perfil</label>
                   <input
                     value={editingUserData.fotoPerfil}
                     onChange={(e) => setEditingUserData((prev) => ({ ...prev, fotoPerfil: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-md bg-input-background"
+                    className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     placeholder="https://..."
                   />
                 </div>
                 <div className="flex items-center gap-4 pt-6">
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className="flex items-center gap-2 text-sm text-foreground dark:text-foreground">
                     <input
                       type="checkbox"
                       checked={editingUserData.ativo}
@@ -941,7 +941,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     />
                     Ativo
                   </label>
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className="flex items-center gap-2 text-sm text-foreground dark:text-foreground">
                     <input
                       type="checkbox"
                       checked={editingUserData.podeComentar}
@@ -1064,18 +1064,19 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
 
         {editingCategoryId && (
         <div className="bg-card border border-border rounded-xl p-6">
-            <h3 className="font-semibold mb-4">Editar Categoria</h3>
+            <h3 className="font-semibold mb-4 text-foreground dark:text-foreground">Editar Categoria</h3>
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Nome</label>
-                  <input type="text" required value={editingCategoryNome} onChange={(e) => setEditingCategoryNome(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-input-background" />
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">Nome</label>
+                  <input type="text" required value={editingCategoryNome} onChange={(e) => setEditingCategoryNome(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Descrição</label>
-                  <input type="text" value={editingCategoryDescricao} onChange={(e) => setEditingCategoryDescricao(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-input-background" />
+                  <label className="block text-sm font-medium mb-1 text-foreground dark:text-foreground">Descrição</label>
+                  <input type="text" value={editingCategoryDescricao} onChange={(e) => setEditingCategoryDescricao(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-input-background dark:bg-input-background text-foreground dark:text-foreground placeholder-muted-foreground dark:placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">Observação: O "Slug" é um identificador único gerado automaticamente baseado no nome da categoria. Ele é usado na URL para identificar a categoria de forma legível.</p>
               <div className="flex gap-3">
                 <Button type="submit">Salvar Alterações</Button>
                 <Button variant="outline" onClick={handleCancelEditCategory}>Cancelar</Button>
