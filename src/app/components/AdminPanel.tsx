@@ -183,12 +183,26 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [localWatermarkPosition, setLocalWatermarkPosition] = useState('');
   const [localSiteName, setLocalSiteName] = useState('');
   const [localLogoUrl, setLocalLogoUrl] = useState('');
+  const [localShowCategories, setLocalShowCategories] = useState(true);
+  const [localShowFooter, setLocalShowFooter] = useState(true);
+  const [localSupportEmail, setLocalSupportEmail] = useState('');
+  const [localFooterGestor, setLocalFooterGestor] = useState('');
+  const [localFooterGestorEmail, setLocalFooterGestorEmail] = useState('');
+  const [localFooterAutor, setLocalFooterAutor] = useState('');
+  const [localFooterAutorEmail, setLocalFooterAutorEmail] = useState('');
 
   useEffect(() => {
     if (globalConfigs.WATERMARK_TEXT) setLocalWatermarkText(globalConfigs.WATERMARK_TEXT);
     if (globalConfigs.WATERMARK_POSITION) setLocalWatermarkPosition(globalConfigs.WATERMARK_POSITION);
     if (globalConfigs.NOME_SITE) setLocalSiteName(globalConfigs.NOME_SITE);
     if (globalConfigs.LOGO_URL) setLocalLogoUrl(globalConfigs.LOGO_URL);
+    setLocalShowCategories(globalConfigs.EXIBIR_CATEGORIAS !== 'false');
+    setLocalShowFooter(globalConfigs.EXIBIR_RODAPE !== 'false');
+    if (globalConfigs.SUPORTE_EMAIL) setLocalSupportEmail(globalConfigs.SUPORTE_EMAIL);
+    if (globalConfigs.RODAPE_GESTOR_NOME) setLocalFooterGestor(globalConfigs.RODAPE_GESTOR_NOME);
+    if (globalConfigs.RODAPE_GESTOR_EMAIL) setLocalFooterGestorEmail(globalConfigs.RODAPE_GESTOR_EMAIL);
+    if (globalConfigs.RODAPE_ESCRITO_POR) setLocalFooterAutor(globalConfigs.RODAPE_ESCRITO_POR);
+    if (globalConfigs.RODAPE_ESCRITO_POR_EMAIL) setLocalFooterAutorEmail(globalConfigs.RODAPE_ESCRITO_POR_EMAIL);
   }, [globalConfigs]);
 
 
@@ -571,7 +585,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         </div>
 
         {editingVideoData && (
-          <div className="p-4 border-b border-border bg-slate-50">
+          <div className="p-4 border-b border-border bg-muted/30">
             <form onSubmit={handleSaveVideo} className="grid gap-4 md:grid-cols-2 items-end">
               <div>
                 <label className="block text-sm font-medium mb-2">Título</label>
@@ -1049,7 +1063,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         )}
 
         {editingCategoryId && (
-          <div className="bg-card border border-border rounded-xl p-6">
+        <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="font-semibold mb-4">Editar Categoria</h3>
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1237,6 +1251,13 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         WATERMARK_POSITION: localWatermarkPosition,
         MARCA_DAGUA_TEXTO: localWatermarkText,
         MARCA_DAGUA_POSICAO: localWatermarkPosition,
+        EXIBIR_CATEGORIAS: localShowCategories ? 'true' : 'false',
+        EXIBIR_RODAPE: localShowFooter ? 'true' : 'false',
+        SUPORTE_EMAIL: localSupportEmail,
+        RODAPE_GESTOR_NOME: localFooterGestor,
+        RODAPE_GESTOR_EMAIL: localFooterGestorEmail,
+        RODAPE_ESCRITO_POR: localFooterAutor,
+        RODAPE_ESCRITO_POR_EMAIL: localFooterAutorEmail,
       });
       // Atualiza também o seletor de importação para consistência imediata
     };
