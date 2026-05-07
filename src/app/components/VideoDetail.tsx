@@ -799,11 +799,38 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
           </div>
 
           <aside className="lg:col-span-1">
-            <div className="bg-card rounded-xl border border-border p-6 shadow-sm sticky top-24">
-              <h3 className="font-medium text-foreground mb-2">Detalhes</h3>
-              <p className="text-sm text-muted-foreground">
-                Este video foi carregado diretamente da API usando o ID {video.id}.
-              </p>
+            <div className="bg-card rounded-xl border border-border p-6 shadow-sm sticky top-24 space-y-6">
+              <div>
+                <h3 className="font-medium text-foreground mb-3">Detalhes</h3>
+                <p className="text-sm text-muted-foreground">
+                  Este video foi carregado diretamente da API usando o ID {video.id}.
+                </p>
+              </div>
+              {usuario?.perfil === 'ADMIN' && (
+                <div className="border-t border-border pt-4">
+                  <h4 className="font-medium text-foreground mb-2 text-sm">Link Direto</h4>
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground mb-2">Compartilhe este link com qualquer pessoa:</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={window.location.href}
+                        readOnly
+                        className="flex-1 text-xs px-2 py-1 rounded border border-border bg-input-background"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          alert('Link copiado!');
+                        }}
+                        className="px-2 py-1 bg-primary text-primary-foreground text-xs rounded font-medium hover:bg-primary/90"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </aside>
         </div>
