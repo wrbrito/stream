@@ -31,6 +31,10 @@ function AppContent() {
     criadoEm: string;
   } | null>(null);
 
+  const supportEmail = configsPublicas.SUPORTE_EMAIL || 'suporte@colegiodamas.com.br';
+  const showFooter = configsPublicas.EXIBIR_RODAPE !== 'false';
+  const showCategories = configsPublicas.EXIBIR_CATEGORIAS !== 'false';
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
     return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -65,13 +69,30 @@ function AppContent() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const videoIdParam = params.get('videoId');
+    if (videoIdParam) {
+      const id = Number(videoIdParam);
+      if (!Number.isNaN(id) && id > 0) {
+        setSelectedVideoId(id);
+        setCurrentScreen('video');
+      }
+    }
+  }, []);
+
   const handleVideoClick = (videoId: number) => {
     setSelectedVideoId(videoId);
     setCurrentScreen('video');
+    const url = new URL(window.location.href);
+    url.searchParams.set('videoId', String(videoId));
+    window.history.replaceState(null, '', url.toString());
   };
 
   const handleBackToHome = () => {
     setCurrentScreen('home');
+    setSelectedVideoId(null);
+    window.history.replaceState(null, '', window.location.pathname);
   };
 
   const handleUploadClick = () => {
@@ -162,62 +183,64 @@ function AppContent() {
                 <span className="font-semibold">Enviar Vídeo</span>
               </Button>
             )}
-            
-            <div className="relative">
-              <Button variant="ghost" size="icon" onClick={() => setShowNotifications(!showNotifications)} title="Notificações" className="rounded-xl relative">
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <div className="absolute top-1 right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
-                    {unreadCount}
-                  </div>
-                )}
-              </Button>
 
-              {showNotifications && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-50 max-h-96 overflow-auto animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="p-4 border-b border-border flex items-center justify-between">
-                    <h3 className="font-semibold">Notificações</h3>
-                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={markAllAsRead}>
-                      Ler todas
-                    </Button>
-                  </div>
-                  {notifications.length === 0 ? (
-                    <p className="p-8 text-center text-muted-foreground text-sm">Nenhuma notificação</p>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`p-4 cursor-pointer transition-colors ${!notif.lida ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-accent'}`}
-                          onClick={() => {
-                            markAsRead(notif.id);
-                            setSelectedNotification({
-                              id: notif.id,
-                              titulo: notif.titulo,
-                              mensagem: notif.mensagem,
-                              criadoEm: notif.criadoEm,
-                            });
-                            setShowNotifications(false);
-                          }}
-                        >
-                          <p className="font-semibold text-sm">{notif.titulo}</p>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.mensagem}</p>
-                          <p className="text-[10px] text-muted-foreground mt-2">{new Date(notif.criadoEm).toLocaleDateString()}</p>
-                        </div>
-                      ))}
+            {isAuthenticated && (
+              <div className="relative">
+                <Button variant="ghost" size="icon" onClick={() => setShowNotifications(!showNotifications)} title="Notificações" className="rounded-xl relative">
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
+                      {unreadCount}
                     </div>
                   )}
-                  <Button variant="ghost" className="w-full justify-center rounded-t-none border-t border-border text-xs h-10" onClick={handleNotificationsClick}>
-                    Ver todas as notificações
-                  </Button>
-                </div>
-              )}
-            </div>
-            
+                </Button>
+
+                {showNotifications && (
+                  <div className="absolute top-full right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-50 max-h-96 overflow-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-4 border-b border-border flex items-center justify-between">
+                      <h3 className="font-semibold">Notificações</h3>
+                      <Button variant="ghost" size="sm" className="text-xs h-7" onClick={markAllAsRead}>
+                        Ler todas
+                      </Button>
+                    </div>
+                    {notifications.length === 0 ? (
+                      <p className="p-8 text-center text-muted-foreground text-sm">Nenhuma notificação</p>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {notifications.map((notif) => (
+                          <div
+                            key={notif.id}
+                            className={`p-4 cursor-pointer transition-colors ${!notif.lida ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-accent'}`}
+                            onClick={() => {
+                              markAsRead(notif.id);
+                              setSelectedNotification({
+                                id: notif.id,
+                                titulo: notif.titulo,
+                                mensagem: notif.mensagem,
+                                criadoEm: notif.criadoEm,
+                              });
+                              setShowNotifications(false);
+                            }}
+                          >
+                            <p className="font-semibold text-sm">{notif.titulo}</p>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.mensagem}</p>
+                            <p className="text-[10px] text-muted-foreground mt-2">{new Date(notif.criadoEm).toLocaleDateString()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <Button variant="ghost" className="w-full justify-center rounded-t-none border-t border-border text-xs h-10" onClick={handleNotificationsClick}>
+                      Ver todas as notificações
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} title="Alternar tema" className="rounded-xl border-border/60">
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
-            
+
             {isAuthenticated ? (
               <Button variant="ghost" size="icon" onClick={handleAdminClick} title={usuario?.perfil === 'ADMIN' ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform hover:scale-110">
@@ -268,7 +291,12 @@ function AppContent() {
       <main className="flex-1">
         {currentScreen === 'login' && (
           <div className="min-h-screen flex items-center justify-center bg-background">
-            <Login onLogin={() => setCurrentScreen('home')} />
+            <Login
+              onLogin={() => setCurrentScreen('home')}
+              nomeSite={nomeSite}
+              logoUrl={logoCompleta}
+              suporteEmail={supportEmail}
+            />
           </div>
         )}
         {currentScreen === 'home' && (
@@ -301,7 +329,7 @@ function AppContent() {
           <ProfilePage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
         )}
       </main>
-      <Footer nomeSite={nomeSite} logoUrl={logoCompleta} />
+      {showFooter && <Footer nomeSite={nomeSite} logoUrl={logoCompleta} suporteEmail={supportEmail} />}
     </div>
     </>
   );
