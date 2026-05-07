@@ -21,6 +21,7 @@ interface ApiVideo {
   miniatura?: string | null;
   criadoEm: string;
   categoria?: {
+    id?: number;
     nome?: string;
   };
   visualizacoes?: unknown[] | number;
@@ -109,6 +110,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
   const [formDescricao, setFormDescricao] = useState('');
   const [globalConfigs, setGlobalConfigs] = useState<Record<string, string>>({});
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [relatedVideos, setRelatedVideos] = useState<ApiVideo[]>([]);
   const [comentarioTexto, setComentarioTexto] = useState('');
   const [respostaTexto, setRespostaTexto] = useState<Record<number, string>>({});
   const [respondendoId, setRespondendoId] = useState<number | null>(null);
@@ -166,6 +168,14 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
         if (ativo) {
           setComentarios((comentariosResp.dados as Comentario[]) || []);
           setStatsAvaliacao((avaliacoesResp.dados as any) || { media: 0, total: 0, minhaNota: null });
+        }
+
+        if (ativo) {
+          const categoriaId = Number(video?.categoria?.id || 0) || undefined;
+          const relatedResponse = await api.videos.listar(1, 4, undefined, categoriaId, 'populares');
+          const relatedDados = relatedResponse.dados as ApiVideo[] | { videos: ApiVideo[] } | undefined;
+          const relatedLista = Array.isArray(relatedDados) ? relatedDados : relatedDados?.videos ?? [];
+          setRelatedVideos(relatedLista.filter((item) => item.id !== videoId));
         }
       } catch (erro) {
         if (ativo) {
@@ -494,8 +504,11 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                 {/* Marca d'água UI */}
                 {(() => {
                   const pos = globalConfigs.WATERMARK_POSITION || globalConfigs.MARCA_DAGUA_POSICAO || 'BOTTOM_LEFT';
-                  const text = globalConfigs.WATERMARK_TEXT || globalConfigs.MARCA_DAGUA_TEXTO || 'PLATAFORMA ESCOLAR';
-                  
+                  const text = (globalConfigs.WATERMARK_TEXT?.trim() || globalConfigs.MARCA_DAGUA_TEXTO?.trim() || '').toUpperCase();
+                  if (!text) {
+                    return null;
+                  }
+
                   let positionClasses = 'bottom-4 left-4';
                   if (pos === 'TOP_LEFT') positionClasses = 'top-4 left-4';
                   if (pos === 'TOP_RIGHT') positionClasses = 'top-4 right-4';
@@ -505,7 +518,7 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                   return (
                     <div className={`absolute ${positionClasses} pointer-events-none select-none z-10 opacity-60`}>
                       <span className="bg-black/50 text-white px-2 py-1 rounded text-xs font-bold tracking-wider border border-white/20 whitespace-nowrap">
-                        {text.toUpperCase()}
+                        {text}
                       </span>
                     </div>
                   );

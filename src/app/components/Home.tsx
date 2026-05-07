@@ -13,6 +13,7 @@ interface HomeProps {
   onNotificationsClick: () => void;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
+  showCategories?: boolean;
 }
 
 const categories = [
@@ -114,7 +115,7 @@ function normalizarVideo(video: ApiVideo): Video {
   };
 }
 
-export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange }: HomeProps) {
+export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [destaques, setDestaques] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -232,31 +233,33 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <section className="mb-8">
-          <h2 className="mb-4">Categorias</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() =>
-                  setSelectedCategoryId(
-                    selectedCategoryId === category.id ? null : category.id
-                  )
-                }
-                className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedCategoryId === category.id
-                    ? 'border-primary bg-primary/5 shadow-md'
-                    : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
-                }`}
-              >
-                <div className="text-3xl mb-2">{category.icon}</div>
-                <div className="font-medium text-sm text-foreground">
-                  {category.name}
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
+        {showCategories !== false && (
+          <section className="mb-8">
+            <h2 className="mb-4">Categorias</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() =>
+                    setSelectedCategoryId(
+                      selectedCategoryId === category.id ? null : category.id
+                    )
+                  }
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                    selectedCategoryId === category.id
+                      ? 'border-primary bg-primary/5 shadow-md'
+                      : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="text-3xl mb-2">{category.icon}</div>
+                  <div className="font-medium text-sm text-foreground">
+                    {category.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {selectedCategoryId && (
           <div className="mb-6">
@@ -314,18 +317,21 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                   Ver todos
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {destaques.slice(0, 3).map((video) => (
-                  <VideoCard
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {destaques.slice(0, 4).map((video) => (
+                  <button
                     key={`destaque-${video.id}`}
-                    title={video.titulo}
-                    category={video.categoria.nome}
-                    author={video.autor}
-                    views={video.visualizacoes}
-                    type={video.tipo}
-                    thumbnail={video.thumbnail}
                     onClick={() => onVideoClick(video.id)}
-                  />
+                    className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-3 hover:border-primary hover:shadow-md transition-all"
+                  >
+                    <div className="w-20 h-14 rounded-xl overflow-hidden bg-muted">
+                      <img src={video.thumbnail} alt={video.titulo} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-sm text-foreground line-clamp-2">{video.titulo}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{video.autor}</p>
+                    </div>
+                  </button>
                 ))}
               </div>
             </section>
