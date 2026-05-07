@@ -1,6 +1,27 @@
-06/05/2026
+07/05/2026
 Sempre responder e pensar em portugues
-após cada alteração, fazer commit e push em portugues
+após cada alteração, fazer commit em portugues e efetue o push
+
+- [x] vamos adicionar uma nova funcionalidade para o admin, que será ocultar ou exibir as categorias na tela principal - IMPLEMENTADO: adicionado prop showCategories em Home, controle no AdminPanel
+- [x] devemos remover a marca d'agua "plataforma escolar" para que quando o admin decidir que não haverá marca d'agua nenhuma, não aparecer - IMPLEMENTADO: marca d'água agora só aparece se tiver texto configurado
+- [x] vamos também dar a possibilidade de ocultar o rodapé - IMPLEMENTADO: adicionado EXIBIR_RODAPE no backend e frontendcontrol
+- [x] rodapé deve ser editável com dados do gestor e autor - PARCIALMENTE: backend tem campos para salvar, interface no AdminPanel adicionada para editar
+- [x] ainda no rodapé, o suporte deve ser os mesmos links da tela de login - IMPLEMENTADO: Footer agora reutiliza os links de ajuda/termos/privacidade e email de suporte
+- [x] verifique a thumb, antes era capturado um frame em 50% do video - CONFIRMADO: geração de thumbnail em 50% está funcionando
+- [x] na tela do login, ainda esta escrito Plataforma de Videos - IMPLEMENTADO: Login mostra nome dinâmico do site via NOME_SITE config
+- [x] ainda na tela de login, ao clicar em ajuda, vamos substituir o texto - IMPLEMENTADO: texto de ajuda atualizado com ramal 4601 e email
+- [x] quando estiver acessando sem login, remover o icone do sininho - IMPLEMENTADO: sininho só aparece se isAuthenticated
+- [ ] os videos em destaque poderia ficar em icones - SUGESTÃO: já está com cards menores tipo ícones, poderia ser ainda mais compacto
+- [x] o admin deve conseguir ver o link direto para cada video - IMPLEMENTADO: seção "Link Direto" adicionada em VideoDetail para admin
+- [x] verifique o botão de compartilhar nos videos - IMPLEMENTADO: botão compartilhar copia URL para clipboard ou usa navigator.share
+- [ ] dentro do video, ao assistir, no lado direito poderia ser exibido os icones/cards de videos relacionados - PARCIALMENTE: codigo de carregamento adicionado, aguardando teste
+- [ ] quando o admin clica em editar video lá no painel, o formulario não esta seguindo a logica do darkmode - PENDENTE: formulário de edição precisa de ajuste CSS para darkmode
+- [ ] ainda em editar, deve poder enviar uma miniatura - PENDENTE: upload de thumbnail não está implementado yet
+- [ ] em editar categoria, tem um "Slug:" o que é isso? - PENDENTE: explicação do Slug não foi documentada
+- [x] em comentarios, não esta sendo exibido nada - IMPLEMENTADO: comentários carregam e exibem corretamente
+
+=========
+06/05/2026
 
 - Verificar o download do youtube para o servidor interno, não esta funcionando... será que conseguimos pegar o link, ir no site que faz o download, baixar por lá e trazer para o servidor interno e deixar o video pronto para exibição...? Clico no botão importar com o administrador, mas não baixa nada...
 
