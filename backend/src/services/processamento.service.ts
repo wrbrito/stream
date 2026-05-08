@@ -81,13 +81,35 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
       .run();
   });
 }
+function obterDuracao(arquivoVideo: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    ffmpeg.ffprobe(arquivoVideo, (erro, metadata) => {
+      if (erro || !metadata?.format?.duration) {
+        resolve(null);
+        return;
+      }
+      resolve(metadata.format.duration);
+    });
+  });
+}
+
+function formatarTimestamp(segundos: number): string {
+  const hours = Math.floor(segundos / 3600);
+  const minutes = Math.floor((segundos % 3600) / 60);
+  const secs = Math.floor(segundos % 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
 async function gerarMiniatura(arquivoVideo: string, diretorioMiniaturas: string, nomeArquivo: string) {
   await garantirDiretorio(path.join(diretorioMiniaturas, 'dummy.txt'));
+
+  const duracao = await obterDuracao(arquivoVideo);
+  const timestamp = duracao ? formatarTimestamp(duracao / 2) : '50%';
 
   return new Promise<string>((resolve, reject) => {
     ffmpeg(arquivoVideo)
       .screenshots({
-        timestamps: ['50%'],
+        timestamps: [timestamp],
         filename: `thumb-${nomeArquivo}.png`,
         folder: diretorioMiniaturas,
       })

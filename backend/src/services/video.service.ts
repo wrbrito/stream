@@ -48,6 +48,7 @@ export const VideoService = {
       const filename = path.basename(caminhoArquivo);
       const physicalPath = path.resolve(process.cwd(), env.UPLOAD_DIRECTORY, 'videos', filename);
       await ProcessamentoService.processarVideoInterno(video.id, physicalPath, dados.posicaoMarcaDagua);
+      return VideoRepository.buscarPorId(video.id);
     }
 
     return video;
