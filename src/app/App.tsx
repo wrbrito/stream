@@ -31,9 +31,13 @@ function AppContent() {
     criadoEm: string;
   } | null>(null);
 
-  const supportEmail = configsPublicas.SUPORTE_EMAIL || 'suporte@colegiodamas.com.br';
-  const showFooter = configsPublicas.EXIBIR_RODAPE !== 'false';
-  const showCategories = configsPublicas.EXIBIR_CATEGORIAS !== 'false';
+   const supportEmail = configsPublicas.SUPORTE_EMAIL || 'suporte@colegiodamas.com.br';
+   const showFooter = configsPublicas.EXIBIR_RODAPE !== 'false';
+   const showCategories = configsPublicas.EXIBIR_CATEGORIAS !== 'false';
+   const gestorNome = configsPublicas.RODAPE_GESTOR_NOME || 'Alberto Brasileiro';
+   const gestorEmail = configsPublicas.RODAPE_GESTOR_EMAIL || 'alberto.brasileiro@colegiodamas.com.br';
+   const escritoPor = configsPublicas.RODAPE_ESCRITO_POR || 'Escrito por: William Ramos de Brito';
+   const escritoPorEmail = configsPublicas.RODAPE_ESCRITO_POR_EMAIL || 'william.brito@colegiodamas.com.br';
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -307,6 +311,7 @@ function AppContent() {
             onNotificationsClick={handleNotificationsClick}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
+            showCategories={showCategories}
           />
         )}
         {currentScreen === 'video' && selectedVideoId && (
@@ -329,7 +334,18 @@ function AppContent() {
           <ProfilePage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
         )}
       </main>
-      {showFooter && <Footer nomeSite={nomeSite} logoUrl={logoCompleta} suporteEmail={supportEmail} />}
+      {showFooter && (
+          <Footer
+            nomeSite={nomeSite}
+            logoUrl={logoCompleta}
+            suporteEmail={supportEmail}
+            gestorNome={gestorNome}
+            gestorEmail={gestorEmail}
+            escritoPor={escritoPor}
+            escritoPorEmail={escritoPorEmail}
+            isLoggedIn={isAuthenticated}
+          />
+        )}
     </div>
     </>
   );

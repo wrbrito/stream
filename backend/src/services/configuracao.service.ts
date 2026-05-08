@@ -24,6 +24,13 @@ export const ConfiguracaoService = {
       'WATERMARK_POSITION',
       'MARCA_DAGUA_TEXTO',
       'MARCA_DAGUA_POSICAO',
+      'EXIBIR_CATEGORIAS',
+      'EXIBIR_RODAPE',
+      'SUPORTE_EMAIL',
+      'RODAPE_GESTOR_NOME',
+      'RODAPE_GESTOR_EMAIL',
+      'RODAPE_ESCRITO_POR',
+      'RODAPE_ESCRITO_POR_EMAIL',
     ];
 
     return chavesPublicas.reduce((acc, chave) => {

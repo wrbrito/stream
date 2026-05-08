@@ -7,9 +7,12 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface LoginProps {
   onLogin: () => void;
+  nomeSite?: string;
+  logoUrl?: string;
+  suporteEmail?: string;
 }
 
-export function Login({ onLogin }: LoginProps) {
+export function Login({ onLogin, nomeSite = 'Plataforma de Vídeos', logoUrl, suporteEmail }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [erro, setErro] = useState('');
@@ -39,11 +42,15 @@ export function Login({ onLogin }: LoginProps) {
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-xl border border-border p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mb-4">
-              <Video className="w-8 h-8 text-primary-foreground" />
-            </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={nomeSite} className="w-16 h-16 rounded-xl object-cover mb-4 border border-border" />
+            ) : (
+              <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mb-4">
+                <Video className="w-8 h-8 text-primary-foreground" />
+              </div>
+            )}
             <h1 className="text-2xl font-semibold text-foreground">
-              Plataforma de Vídeos
+              {nomeSite}
             </h1>
             <p className="text-muted-foreground mt-1">
               Acesse sua conta para continuar
@@ -122,7 +129,7 @@ export function Login({ onLogin }: LoginProps) {
                 type="button" 
                 onClick={() => setModalConteudo({ 
                   titulo: 'Ajuda', 
-                  texto: 'Se você esqueceu sua senha ou está com problemas para acessar, entre em contato com o administrador da sua instituição ou suporte técnico no ramal 123.' 
+                  texto: `Se você esqueceu sua senha ou está com problemas para acessar, entre em contato com o Setor de Tecnologia no ramal 4601 ou enviando um email para ${suporteEmail}.`, 
                 })}
                 className="hover:text-foreground transition-colors"
               >

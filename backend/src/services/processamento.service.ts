@@ -57,8 +57,9 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
   const posicao = obterPosicaoMarcaDagua(posicaoMarcaDagua || 'BOTTOM_LEFT');
 
   return new Promise<void>((resolve, reject) => {
-    ffmpeg(arquivoOriginal)
-      .videoFilters({
+    const comando = ffmpeg(arquivoOriginal);
+    if (textoMarcaDagua && textoMarcaDagua.trim()) {
+      comando.videoFilters({
         filter: 'drawtext',
         options: {
           text: textoMarcaDagua,
@@ -70,7 +71,10 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
           x: posicao.x,
           y: posicao.y,
         }
-      })
+      });
+    }
+
+    comando
       .output(arquivoSaida)
       .on('end', () => resolve())
       .on('error', reject)
@@ -83,7 +87,7 @@ async function gerarMiniatura(arquivoVideo: string, diretorioMiniaturas: string,
   return new Promise<string>((resolve, reject) => {
     ffmpeg(arquivoVideo)
       .screenshots({
-        timestamps: ['00:00:01.000'],
+        timestamps: ['50%'],
         filename: `thumb-${nomeArquivo}.png`,
         folder: diretorioMiniaturas,
       })
