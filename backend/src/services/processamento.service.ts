@@ -36,6 +36,7 @@ async function baixarYoutube(url: string, arquivoDestino: string, qualidade: str
       output: arquivoDestino,
       format: formatString,
       mergeOutputFormat: 'mp4',
+      ffmpegLocation: ffmpegPath || undefined,
       noCheckCertificates: true,
       noWarnings: true,
       preferFreeFormats: true,
@@ -62,6 +63,7 @@ async function baixarYoutube(url: string, arquivoDestino: string, qualidade: str
       output: arquivoDestino,
       format: 'best',
       mergeOutputFormat: 'mp4',
+      ffmpegLocation: ffmpegPath || undefined,
       noCheckCertificates: true,
       noWarnings: true,
       preferFreeFormats: true,
@@ -103,6 +105,8 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
     }
 
     comando
+      .videoCodec('libx264')
+      .audioCodec('aac')
       .output(arquivoSaida)
       .on('progress', (progress) => {
         if (onProgress && progress.percent) {

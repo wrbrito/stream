@@ -288,20 +288,25 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     const interval = setInterval(async () => {
       try {
         const promises = videosProcessando.map(async (v) => {
-          const response = await api.videos.obterProcessamento(v.id);
-          if (response.sucesso && response.dados) {
-            const proc = response.dados as { progresso: number; status: string };
-            setVideoProgress(prev => ({ ...prev, [v.id]: proc.progresso }));
-            
-            // Se concluiu ou deu erro, recarregar dados para atualizar a lista
-            if (proc.status === 'CONCLUIDO' || proc.status === 'ERRO') {
-              await carregarDados();
+          try {
+            const response = await api.videos.obterProcessamento(v.id);
+            if (response.sucesso && response.dados) {
+              const proc = response.dados as { progresso: number; status: string };
+              setVideoProgress(prev => ({ ...prev, [v.id]: proc.progresso }));
+              
+              // Se concluiu ou deu erro, recarregar dados para atualizar a lista
+              if (proc.status === 'CONCLUIDO' || proc.status === 'ERRO') {
+                await carregarDados();
+              }
             }
+          } catch (innerErr) {
+            // Silencia erros de rede individuais no polling para não inundar o console
+            console.warn(`Não foi possível obter progresso para o vídeo ${v.id}. Verifique a conexão com o servidor.`);
           }
         });
         await Promise.all(promises);
       } catch (err) {
-        console.error('Erro ao buscar progresso:', err);
+        console.error('Erro no polling de progresso:', err);
       }
     }, 3000);
 
