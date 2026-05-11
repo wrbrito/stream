@@ -3,12 +3,16 @@ import fs from 'fs/promises';
 import { env } from '../lib/env.js';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
 import youtubedl from 'youtube-dl-exec';
 import { ProcessamentoRepository } from '../repositories/processamento.repository.js';
 import { VideoRepository } from '../repositories/video.repository.js';
 import { ConfiguracaoService } from './configuracao.service.js';
 
 ffmpeg.setFfmpegPath(ffmpegPath || 'ffmpeg');
+if (ffprobePath && ffprobePath.path) {
+  ffmpeg.setFfprobePath(ffprobePath.path);
+}
 type PosicaoMarcaDagua = 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
 
 async function garantirDiretorio(destino: string) {
@@ -18,13 +22,13 @@ async function garantirDiretorio(destino: string) {
 async function baixarYoutube(url: string, arquivoDestino: string, qualidade: string = 'best', onProgress?: (percentual: number) => void) {
   await garantirDiretorio(arquivoDestino);
 
-  // Mapeamento de qualidades comuns para formato youtube-dl
+  // Mapeamento de qualidades comuns para formato youtube-dl, priorizando mp4 e m4a para garantir áudio
   let formatString = qualidade;
-  if (qualidade === '1080p') formatString = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]';
-  else if (qualidade === '720p') formatString = 'bestvideo[height<=720]+bestaudio/best[height<=720]';
-  else if (qualidade === '480p') formatString = 'bestvideo[height<=480]+bestaudio/best[height<=480]';
-  else if (qualidade === '360p') formatString = 'bestvideo[height<=360]+bestaudio/best[height<=360]';
-  else if (qualidade === 'maxima') formatString = 'bestvideo+bestaudio/best';
+  if (qualidade === '1080p') formatString = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best';
+  else if (qualidade === '720p') formatString = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best';
+  else if (qualidade === '480p') formatString = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best';
+  else if (qualidade === '360p') formatString = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360][ext=mp4]/best';
+  else if (qualidade === 'maxima') formatString = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
 
   try {
     // Usamos spawn para poder capturar o progresso via stdout
