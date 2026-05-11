@@ -92,6 +92,7 @@ model Processamento {
   videoId       Int                 @unique
   status        String @default("PENDENTE")
   mensagem      String?
+  progresso     Int                 @default(0)
   iniciadoEm    DateTime            @default(now())
   finalizadoEm  DateTime?
 }

@@ -135,6 +135,8 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [limite, setLimite] = useState(10);
   const [totalItens, setTotalItens] = useState(0);
   const [importingVideoId, setImportingVideoId] = useState<number | null>(null);
+  const [videoProgress, setVideoProgress] = useState<Record<number, number>>({});
+  const [selectedQuality, setSelectedQuality] = useState<string>('maxima');
 
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const { usuario } = useAuth();
@@ -278,6 +280,34 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     carregarDados();
   }, [pagina, limite, activeMenu]);
 
+  // Efeito para monitorar progresso de vídeos em processamento
+  useEffect(() => {
+    const videosProcessando = videos.filter(v => v.status === 'PROCESSANDO');
+    if (videosProcessando.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const promises = videosProcessando.map(async (v) => {
+          const response = await api.videos.obterProcessamento(v.id);
+          if (response.sucesso && response.dados) {
+            const proc = response.dados as { progresso: number; status: string };
+            setVideoProgress(prev => ({ ...prev, [v.id]: proc.progresso }));
+            
+            // Se concluiu ou deu erro, recarregar dados para atualizar a lista
+            if (proc.status === 'CONCLUIDO' || proc.status === 'ERRO') {
+              await carregarDados();
+            }
+          }
+        });
+        await Promise.all(promises);
+      } catch (err) {
+        console.error('Erro ao buscar progresso:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [videos]);
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -348,8 +378,8 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const handleImportarVideo = async (id: number) => {
     try {
       setImportingVideoId(id);
-      await api.videos.importarYoutube(id);
-      alert('Importação iniciada. O arquivo final será salvo em /uploads/videos (pasta backend/storage/videos).');
+      await api.videos.importarYoutube(id, undefined, selectedQuality);
+      setVideoProgress(prev => ({ ...prev, [id]: 0 }));
       await carregarDados();
     } catch (error) {
       setError(tratarErroApi(error));
@@ -578,6 +608,20 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
               <option value="INTERNO">Interno</option>
               <option value="YOUTUBE">YouTube</option>
             </select>
+            <div className="flex items-center gap-2 ml-2">
+              <span className="text-xs font-medium text-muted-foreground uppercase">Qualidade:</span>
+              <select
+                value={selectedQuality}
+                onChange={(event) => setSelectedQuality(event.target.value)}
+                className="px-3 py-1.5 rounded-lg border border-border bg-input-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="maxima">Máxima (Padrão)</option>
+                <option value="1080p">1080p</option>
+                <option value="720p">720p</option>
+                <option value="480p">480p</option>
+                <option value="360p">360p</option>
+              </select>
+            </div>
           </div>
           {onUploadClick && (
             <Button onClick={onUploadClick} size="sm">Novo Vídeo</Button>
@@ -705,10 +749,18 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     <td className="px-6 py-4">
                       {video.tipo === 'YOUTUBE' ? (
                         importingVideoId === video.id || video.status === 'PROCESSANDO' ? (
-                          <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            <Loader className="w-3 h-3 animate-spin" />
-                            Importando...
-                          </span>
+                          <div className="flex flex-col gap-1 w-32">
+                            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                              <Loader className="w-3 h-3 animate-spin" />
+                              {videoProgress[video.id] !== undefined ? `${videoProgress[video.id]}%` : 'Importando...'}
+                            </span>
+                            <div className="w-full bg-blue-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full transition-all duration-500" 
+                                style={{ width: `${videoProgress[video.id] ?? 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
                         ) : video.status === 'PENDENTE' ? (
                           <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
                             <AlertCircle className="w-3 h-3" />
@@ -725,6 +777,19 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                             Importado
                           </span>
                         )
+                      ) : video.status === 'PROCESSANDO' ? (
+                        <div className="flex flex-col gap-1 w-32">
+                          <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            <Loader className="w-3 h-3 animate-spin" />
+                            {videoProgress[video.id] !== undefined ? `${videoProgress[video.id]}%` : 'Processando...'}
+                          </span>
+                          <div className="w-full bg-blue-200 rounded-full h-1.5">
+                            <div 
+                              className="bg-blue-600 h-1.5 rounded-full transition-all duration-500" 
+                              style={{ width: `${videoProgress[video.id] ?? 0}%` }}
+                            ></div>
+                          </div>
+                        </div>
                       ) : (
                         '-'
                       )}

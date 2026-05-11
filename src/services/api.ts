@@ -271,12 +271,20 @@ export const api = {
 
     importarYoutube: async (
       id: number,
-      posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER'
+      posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER',
+      qualidade?: string
     ) => {
       return api.fetch(`/videos/${id}/importar`, {
         method: 'POST',
-        body: JSON.stringify(posicaoMarcaDagua ? { posicaoMarcaDagua } : {}),
+        body: JSON.stringify({ 
+          posicaoMarcaDagua,
+          qualidade: qualidade || 'maxima'
+        }),
       });
+    },
+
+    obterProcessamento: async (id: number) => {
+      return api.fetch(`/videos/${id}/processamento`);
     },
 
     buscarMetadadosYoutube: async (url: string) => {

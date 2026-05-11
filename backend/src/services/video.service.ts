@@ -118,7 +118,7 @@ export const VideoService = {
     }
   },
 
-  importarYoutube: async (id: number, posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER') => {
+  importarYoutube: async (id: number, posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER', qualidade?: string) => {
     const video = await VideoRepository.buscarPorId(id);
     if (!video) {
       throw new Error('Vídeo não encontrado');
@@ -127,6 +127,6 @@ export const VideoService = {
       throw new Error('Apenas vídeos do YouTube podem ser importados');
     }
 
-    return ProcessamentoService.importarYoutube(id, video.urlOriginal, posicaoMarcaDagua);
+    return ProcessamentoService.importarYoutube(id, video.urlOriginal, posicaoMarcaDagua, qualidade);
   },
 };

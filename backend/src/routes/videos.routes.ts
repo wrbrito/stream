@@ -30,6 +30,7 @@ videosRouter.post(
 videosRouter.put('/:id', autenticar, permitirPerfis('ADMIN', 'PROFESSOR'), validar(atualizarVideoSchema), VideosController.atualizar);
 videosRouter.delete('/:id', autenticar, permitirPerfis('ADMIN'), validar(videoIdSchema), VideosController.deletar);
 videosRouter.post('/:id/importar', autenticar, permitirPerfis('ADMIN'), validar(videoIdSchema), VideosController.importar);
+videosRouter.get('/:id/processamento', autenticar, validar(videoIdSchema), VideosController.obterProcessamento);
 videosRouter.get('/:id/download', autenticar, permitirPerfis('ADMIN'), validar(videoIdSchema), VideosController.download);
 
 export { videosRouter };

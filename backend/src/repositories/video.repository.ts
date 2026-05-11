@@ -45,7 +45,7 @@ export const VideoRepository = {
   buscarPorId: async (id: number) => {
     return prisma.video.findUnique({
       where: { id },
-      include: { categoria: true, uploader: true, visualizacoes: true },
+      include: { categoria: true, uploader: true, visualizacoes: true, processamento: true },
     });
   },
 

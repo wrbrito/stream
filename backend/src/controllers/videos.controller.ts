@@ -119,6 +119,7 @@ export const VideosController = {
     const id = Number(req.params.id);
     const body = (req.body ?? {}) as {
       posicaoMarcaDagua?: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
+      qualidade?: string;
     };
     try {
       const video = await VideoService.buscarPorId(id);
@@ -126,7 +127,7 @@ export const VideosController = {
         return res.status(400).json({ sucesso: false, erro: 'Apenas vídeos do YouTube com URL válida podem ser importados.' });
       }
 
-      VideoService.importarYoutube(id, body.posicaoMarcaDagua).catch((erro) => {
+      VideoService.importarYoutube(id, body.posicaoMarcaDagua, body.qualidade || 'maxima').catch((erro) => {
         console.error('Erro assíncrono ao importar vídeo do YouTube:', erro);
       });
       return res.json({ sucesso: true, dados: { mensagem: 'Importação iniciada. O vídeo será processado em breve.' } });
@@ -134,6 +135,19 @@ export const VideosController = {
       console.error('Erro ao iniciar importação do vídeo do YouTube:', erro);
       return res.status(500).json({ sucesso: false, erro: 'Erro ao iniciar a importação do vídeo do YouTube.' });
     }
+  },
+
+  obterProcessamento: async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const video = await VideoService.buscarPorId(id);
+    if (!video) {
+      return res.status(404).json({ sucesso: false, erro: 'Vídeo não encontrado' });
+    }
+    
+    // Supondo que o VideoService.buscarPorId já traga o processamento se houver relação.
+    // Caso contrário, precisaríamos de um ProcessamentoService.buscarPorVideoId.
+    // Vamos verificar como o VideoRepository.buscarPorId está implementado.
+    return res.json({ sucesso: true, dados: video.processamento || null });
   },
 
   download: async (req: Request, res: Response) => {
