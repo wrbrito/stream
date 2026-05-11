@@ -1,3 +1,14 @@
+11/05/2026
+
+Sempre responder e pensar em portugues
+após cada alteração, fazer commit em portugues
+
+- [x] adicionar um "load" quando for fazer a importação do video para o servidor interno, mostrando quantos % faltam para conclusão
+- [x] opção de escolha de qualidade para o video que será importado para o servidor interno, qualidade maxima como padrão
+
+
+====================
+
 07/05/2026
 Sempre responder e pensar em portugues
 após cada alteração, fazer commit em portugues e efetue o push
@@ -11,13 +22,13 @@ após cada alteração, fazer commit em portugues e efetue o push
 - [x] na tela do login, ainda esta escrito Plataforma de Videos - IMPLEMENTADO: Login mostra nome dinâmico do site via NOME_SITE config
 - [x] ainda na tela de login, ao clicar em ajuda, vamos substituir o texto - IMPLEMENTADO: texto de ajuda atualizado com ramal 4601 e email
 - [x] quando estiver acessando sem login, remover o icone do sininho - IMPLEMENTADO: sininho só aparece se isAuthenticated
-- [ ] os videos em destaque poderia ficar em icones - SUGESTÃO: já está com cards menores tipo ícones, poderia ser ainda mais compacto
+- [x] os videos em destaque poderia ficar em icones - IMPLEMENTADO: vídeos em destaque exibidos em cards compactos com thumbnail + título + autor
 - [x] o admin deve conseguir ver o link direto para cada video - IMPLEMENTADO: seção "Link Direto" adicionada em VideoDetail para admin
 - [x] verifique o botão de compartilhar nos videos - IMPLEMENTADO: botão compartilhar copia URL para clipboard ou usa navigator.share
-- [ ] dentro do video, ao assistir, no lado direito poderia ser exibido os icones/cards de videos relacionados - PARCIALMENTE: codigo de carregamento adicionado, aguardando teste
-- [ ] quando o admin clica em editar video lá no painel, o formulario não esta seguindo a logica do darkmode - PENDENTE: formulário de edição precisa de ajuste CSS para darkmode
-- [ ] ainda em editar, deve poder enviar uma miniatura - PENDENTE: upload de thumbnail não está implementado yet
-- [ ] em editar categoria, tem um "Slug:" o que é isso? - PENDENTE: explicação do Slug não foi documentada
+- [ ] dentro do video, ao assistir, no lado direito poderia ser exibido os icones/cards de videos relacionados - PARCIALMENTE: relatedVideos carrega dados via API mas não renderiza na tela, precisa adicionar seção de exibição
+- [x] quando o admin clica em editar video lá no painel, o formulario não esta seguindo a logica do darkmode - IMPLEMENTADO: formulário usa classes CSS do tailwind que respondem ao tema dark
+- [ ] ainda em editar, deve poder enviar uma miniatura - PARCIALMENTE: upload de thumbnail está implementado no UploadVideo.tsx, mas não na edição em AdminPanel
+- [x] em editar categoria, tem um "Slug:" o que é isso? - IMPLEMENTADO: Slug é um identificador único em formato URL-friendly (ex: "tecnologia" de "Tecnologia"), usado para criar URLs amigáveis
 - [x] em comentarios, não esta sendo exibido nada - IMPLEMENTADO: comentários carregam e exibem corretamente
 
 =========
