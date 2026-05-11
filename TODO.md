@@ -1,11 +1,6 @@
-# Plano de Correção Dark Mode em Formulários
+# TODO
 
-## Passos Pendentes:
-- [x] 1. Editar src/styles/theme.css com correções de variáveis CSS para dark mode (input-background dark, fix --color-input, update @layer base inputs). ✅
-- [ ] 2. Testar em dev server: npm run dev, alternar dark/light, verificar formulários (Login, UploadVideo etc.).
-- [ ] 3. Verificar outros componentes UI se afetados.
-- [ ] 4. Build e preview: npm run build && npm run preview.
-- [ ] 5. Finalizar tarefa.
-
-**Status: Correções CSS aplicadas e testadas. Dark mode compatível! ✅**
-
+- [ ] Remover do componente `Footer` as seções que exibem **Gestor do Setor de Tecnologia** e **Escrito por**.
+- [ ] Garantir que o rodapé fique apenas com as partes anteriores (estrutura de colunas: Suporte/Contato/Notas + bloco final de direitos).
+- [ ] (Opcional se necessário) Ajustar `FooterProps` para não depender de `gestorNome/gestorEmail/escritoPor/escritoPorEmail` (ou manter sem usar).
+- [ ] Verificar se o app compila após a alteração.

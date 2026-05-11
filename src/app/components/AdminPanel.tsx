@@ -1322,12 +1322,6 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                 <option value="CENTER">Centro</option>
               </select>
             </div>
-
-            <div className="pt-2">
-              <Button type="submit" disabled={isSavingConfigs}>
-                {isSavingConfigs ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-            </div>
           </form>
         </div>
 
@@ -1362,7 +1356,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
             Controle a visibilidade de categorias e rodapé, além de configurar informações de contato.
           </p>
 
-          <form className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -1444,6 +1438,12 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <Button type="submit" disabled={isSavingConfigs}>
+                {isSavingConfigs ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
             </div>
           </form>
         </div>

@@ -38,39 +38,46 @@ export function Footer({
                 <p className="text-sm text-muted-foreground">A plataforma de vídeos educacionais da sua instituição.</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
               <div>
                 <p className="font-medium text-foreground mb-2">Suporte</p>
                 <ul className="space-y-2">
-                  <li><a href="/ajuda" className="hover:text-primary transition-colors">Ajuda</a></li>
-                  <li><a href="/termos" className="hover:text-primary transition-colors">Termos de Uso</a></li>
-                  <li><a href="/privacidade" className="hover:text-primary transition-colors">Privacidade</a></li>
+                  <li>
+                    <button type="button" className="hover:text-primary transition-colors" onClick={() => window.alert(`Se você esqueceu sua senha ou está com problemas para acessar, entre em contato com o Setor de Tecnologia no ramal 4601 ou enviando um email para ${suporteEmail}.`)}>
+                      Ajuda
+                    </button>
+                  </li>
+                  <li>
+                    <button type="button" className="hover:text-primary transition-colors" onClick={() => window.alert('Esta plataforma é para uso exclusivo de alunos e professores. Todo conteúdo enviado é de responsabilidade do autor e deve respeitar as diretrizes da instituição.')}>Termos de Uso</button>
+                  </li>
+                  <li>
+                    <button type="button" className="hover:text-primary transition-colors" onClick={() => window.alert('Seus dados de acesso são protegidos e utilizados apenas para autenticação e registro de atividades educacionais na plataforma.')}>Privacidade</button>
+                  </li>
                 </ul>
               </div>
               <div>
                 <p className="font-medium text-foreground mb-2">Contato</p>
                 <ul className="space-y-2">
                   <li><a href={`mailto:${suporteEmail}`} className="hover:text-primary transition-colors">{suporteEmail}</a></li>
+                  <li>
+                    <span className="text-[12px] text-muted-foreground">Gestor do Setor de Tecnologia</span>
+                    <div className="leading-snug">
+                      <a href={`mailto:${gestorEmail}`} className="text-primary hover:underline">{gestorNome}</a>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="text-[12px] text-muted-foreground">Escrito por</span>
+                    <div className="leading-snug">
+                      <a href={`mailto:${escritoPorEmail}`} className="text-primary hover:underline">{escritoPor}</a>
+                    </div>
+                  </li>
                 </ul>
-              </div>
-              <div>
-                <p className="font-medium text-foreground mb-2">Notas</p>
-                <p className="text-xs text-muted-foreground">Use o link de ajuda para suporte ou acesse o e-mail acima.</p>
+                <p className="text-xs text-muted-foreground mt-2">© 2026 {nomeSite}. Todos os direitos reservados.</p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col justify-between gap-6">
-            <div className="bg-muted/30 border border-border rounded-2xl p-6 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground mb-2">Gestor do Setor de Tecnologia</p>
-              <a href={`mailto:${gestorEmail}`} className="text-primary hover:underline">{gestorNome}</a>
-            </div>
-            <div className="bg-muted/30 border border-border rounded-2xl p-6 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground mb-2">Escrito por</p>
-              <a href={`mailto:${escritoPorEmail}`} className="text-primary hover:underline">{escritoPor}</a>
-            </div>
-            <p className="text-xs text-muted-foreground">© 2026 {nomeSite}. Todos os direitos reservados.</p>
-          </div>
+
         </div>
       </div>
     </footer>
