@@ -9,6 +9,7 @@ import { comentariosRouter } from './comentarios.routes.js';
 import { avaliacoesRouter } from './avaliacoes.routes.js';
 import { ConfiguracaoController } from '../controllers/configuracao.controller.js';
 import { profileRouter } from './profile.routes.js';
+import { recommendationsRouter } from './recommendations.routes.js';
 
 const apiRouter = Router();
 
@@ -21,6 +22,7 @@ apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/comentarios', comentariosRouter);
 apiRouter.use('/avaliacoes', avaliacoesRouter);
 apiRouter.use('/profile', profileRouter);
+apiRouter.use('/recommendations', recommendationsRouter);
 apiRouter.get('/configuracoes/publicas', ConfiguracaoController.listarPublicas);
 
 export { apiRouter };

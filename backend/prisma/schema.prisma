@@ -43,6 +43,14 @@ model Categoria {
   videos     Video[]
 }
 
+model Tag {
+  id      Int      @id @default(autoincrement())
+  nome    String   @unique
+  videos  Video[]
+
+  @@index([nome])
+}
+
 model Video {
   id            Int          @id @default(autoincrement())
   titulo        String
@@ -64,15 +72,23 @@ model Video {
   comentarios    Comentario[]
   avaliacoes     Avaliacao[]
   processamento  Processamento?
+  tags           Tag[]
+
+  @@index([categoriaId])
+  @@index([status, criadoEm])
 }
 
 model Visualizacao {
-  id        Int      @id @default(autoincrement())
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
-  usuarioId Int?
-  video     Video    @relation(fields: [videoId], references: [id])
-  videoId   Int
-  data      DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  usuario        Usuario? @relation(fields: [usuarioId], references: [id])
+  usuarioId      Int?
+  video          Video    @relation(fields: [videoId], references: [id])
+  videoId        Int
+  tempoAssistido Int      @default(0) // Tempo em segundos
+  data           DateTime @default(now())
+
+  @@index([usuarioId])
+  @@index([data])
 }
 
 model Favorito {
