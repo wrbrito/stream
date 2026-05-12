@@ -195,6 +195,10 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [localFooterAutorEmail, setLocalFooterAutorEmail] = useState('');
   const [localFeaturedCount, setLocalFeaturedCount] = useState(4);
   const [localRelatedCount, setLocalRelatedCount] = useState(4);
+  const [localAtivarRecomendados, setLocalAtivarRecomendados] = useState(true);
+  const [localQtdVideosRecomendados, setLocalQtdVideosRecomendados] = useState(10);
+  const [localAtivarEmAlta, setLocalAtivarEmAlta] = useState(true);
+  const [localQtdVideosEmAlta, setLocalQtdVideosEmAlta] = useState(10);
 
   useEffect(() => {
     if (globalConfigs.WATERMARK_TEXT) setLocalWatermarkText(globalConfigs.WATERMARK_TEXT);
@@ -213,6 +217,16 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     setLocalFeaturedCount(Number.isNaN(destaqueCount) ? 4 : destaqueCount);
     const relacionadosCount = Number(globalConfigs.QTD_VIDEOS_RELACIONADOS);
     setLocalRelatedCount(Number.isNaN(relacionadosCount) ? 4 : relacionadosCount);
+
+    // Configurações de recomendação
+    setLocalAtivarRecomendados(globalConfigs.ATIVAR_RECOMENDADOS !== 'false');
+    const qtdRecomendados = Number(globalConfigs.QTD_VIDEOS_RECOMENDADOS);
+    setLocalQtdVideosRecomendados(Number.isNaN(qtdRecomendados) ? 10 : qtdRecomendados);
+
+    // Configurações de "em alta"
+    setLocalAtivarEmAlta(globalConfigs.ATIVAR_EM_ALTA !== 'false');
+    const qtdEmAlta = Number(globalConfigs.QTD_VIDEOS_EM_ALTA);
+    setLocalQtdVideosEmAlta(Number.isNaN(qtdEmAlta) ? 10 : qtdEmAlta);
   }, [globalConfigs]);
 
 
@@ -1380,6 +1394,10 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         RODAPE_ESCRITO_POR_EMAIL: localFooterAutorEmail,
         QTD_VIDEOS_DESTAQUE: String(localFeaturedCount),
         QTD_VIDEOS_RELACIONADOS: String(localRelatedCount),
+        ATIVAR_RECOMENDADOS: localAtivarRecomendados ? 'true' : 'false',
+        QTD_VIDEOS_RECOMENDADOS: String(localQtdVideosRecomendados),
+        ATIVAR_EM_ALTA: localAtivarEmAlta ? 'true' : 'false',
+        QTD_VIDEOS_EM_ALTA: String(localQtdVideosEmAlta),
       });
       // Atualiza também o seletor de importação para consistência imediata
     };
@@ -1584,6 +1602,86 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <Button type="submit" disabled={isSavingConfigs}>
+                {isSavingConfigs ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Settings className="w-5 h-5 text-primary" />
+            Configurações de Recomendação
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Controle a exibição das seções de vídeos recomendados e em alta, além da quantidade de vídeos exibidos em cada uma.
+          </p>
+
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Ativar Vídeos Recomendados</h4>
+                  <p className="text-sm text-muted-foreground">Exibir seção de vídeos recomendados personalizados para o usuário</p>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localAtivarRecomendados}
+                    onChange={(e) => setLocalAtivarRecomendados(e.target.checked)}
+                    className="w-5 h-5 rounded border-border cursor-pointer"
+                  />
+                </label>
+              </div>
+
+              {localAtivarRecomendados && (
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos recomendados</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={localQtdVideosRecomendados}
+                    onChange={(e) => setLocalQtdVideosRecomendados(Number(e.target.value) || 10)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="10"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-border pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Ativar Vídeos em Alta</h4>
+                  <p className="text-sm text-muted-foreground">Exibir seção de vídeos mais populares e em tendência</p>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localAtivarEmAlta}
+                    onChange={(e) => setLocalAtivarEmAlta(e.target.checked)}
+                    className="w-5 h-5 rounded border-border cursor-pointer"
+                  />
+                </label>
+              </div>
+
+              {localAtivarEmAlta && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos em alta</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={localQtdVideosEmAlta}
+                    onChange={(e) => setLocalQtdVideosEmAlta(Number(e.target.value) || 10)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="10"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="pt-4 flex justify-end">

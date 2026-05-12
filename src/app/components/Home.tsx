@@ -15,6 +15,10 @@ interface HomeProps {
   onSearchQueryChange: (value: string) => void;
   showCategories?: boolean;
   featuredCount?: number;
+  showRecommended?: boolean;
+  recommendedCount?: number;
+  showTrending?: boolean;
+  trendingCount?: number;
 }
 
 const categories = [
@@ -117,7 +121,7 @@ function normalizarVideo(video: ApiVideo): Video {
   };
 }
 
-export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories, featuredCount = 4 }: HomeProps) {
+export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories, featuredCount = 4, showRecommended = true, recommendedCount = 10, showTrending = true, trendingCount = 10 }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [destaques, setDestaques] = useState<Video[]>([]);
   const [recomendados, setRecomendados] = useState<Video[]>([]);
@@ -173,8 +177,8 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
       if (shouldShowDestaques) {
         const [respDestaques, respTrending, respRecommended] = await Promise.allSettled([
           api.videos.listar(1, featuredCount, undefined, undefined, 'populares'),
-          api.recommendations.trending(1, featuredCount),
-          usuario ? api.recommendations.recommended(1, featuredCount) : Promise.resolve(null),
+          showTrending ? api.recommendations.trending(1, trendingCount) : Promise.resolve(null),
+          (usuario && showRecommended) ? api.recommendations.recommended(1, recommendedCount) : Promise.resolve(null),
         ]);
 
         if (respDestaques.status === 'fulfilled') {
@@ -183,9 +187,11 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
           setDestaques(listaDestaques.map(normalizarVideo));
         }
 
-        if (respTrending.status === 'fulfilled') {
+        if (respTrending.status === 'fulfilled' && respTrending.value) {
           const dadosTrending = respTrending.value.dados as VideosListPayload | undefined;
           setEmAlta((dadosTrending?.videos ?? []).map(normalizarVideo));
+        } else {
+          setEmAlta([]);
         }
 
         if (respRecommended.status === 'fulfilled' && respRecommended.value) {
@@ -325,7 +331,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
           </section>
         ) : (
           <>
-            {recomendados.length > 0 && (
+            {showRecommended && recomendados.length > 0 && (
               <section className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2>Vídeos recomendados</h2>
@@ -347,7 +353,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
               </section>
             )}
 
-            {emAlta.length > 0 && (
+            {showTrending && emAlta.length > 0 && (
               <section className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2>Em alta</h2>

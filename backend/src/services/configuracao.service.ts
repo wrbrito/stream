@@ -33,6 +33,10 @@ export const ConfiguracaoService = {
       'RODAPE_ESCRITO_POR_EMAIL',
       'QTD_VIDEOS_DESTAQUE',
       'QTD_VIDEOS_RELACIONADOS',
+      'ATIVAR_RECOMENDADOS',
+      'QTD_VIDEOS_RECOMENDADOS',
+      'ATIVAR_EM_ALTA',
+      'QTD_VIDEOS_EM_ALTA',
     ];
 
     return chavesPublicas.reduce((acc, chave) => {

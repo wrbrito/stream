@@ -1,4 +1,5 @@
 import { RecommendationRepository } from '../repositories/recommendation.repository.js';
+import { ConfiguracaoService } from './configuracao.service.js';
 import { cache } from '../utils/cache.js';
 
 const normalize01 = (value: number, min: number, max: number) => {
@@ -39,7 +40,17 @@ export const RecommendationService = {
    * Obtém vídeos recomendados personalizados para um usuário.
    */
   getRecommendedVideos: async (userId: number, pagina: number = 1, limite: number = 10) => {
-    ({ pagina, limite } = normalizarPaginacao(pagina, limite));
+    // Verificar se recomendados estão ativados
+    const ativarRecomendados = await ConfiguracaoService.obter('ATIVAR_RECOMENDADOS', 'true');
+    if (ativarRecomendados === 'false') {
+      return { videos: [], total: 0, pagina, limite };
+    }
+
+    // Obter quantidade configurada de vídeos recomendados
+    const qtdConfigurada = parseInt(await ConfiguracaoService.obter('QTD_VIDEOS_RECOMENDADOS', '10'));
+    const qtdFinal = Number.isNaN(qtdConfigurada) ? 10 : qtdConfigurada;
+    
+    ({ pagina, limite } = normalizarPaginacao(pagina, Math.min(limite, qtdFinal)));
     const cacheKey = `recommended_${userId}_${pagina}_${limite}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;
@@ -195,7 +206,17 @@ export const RecommendationService = {
    * Obtém vídeos em alta.
    */
   getTrendingVideos: async (pagina: number = 1, limite: number = 10) => {
-    ({ pagina, limite } = normalizarPaginacao(pagina, limite));
+    // Verificar se "em alta" estão ativados
+    const ativarEmAlta = await ConfiguracaoService.obter('ATIVAR_EM_ALTA', 'true');
+    if (ativarEmAlta === 'false') {
+      return { videos: [], total: 0, pagina, limite };
+    }
+
+    // Obter quantidade configurada de vídeos em alta
+    const qtdConfigurada = parseInt(await ConfiguracaoService.obter('QTD_VIDEOS_EM_ALTA', '10'));
+    const qtdFinal = Number.isNaN(qtdConfigurada) ? 10 : qtdConfigurada;
+    
+    ({ pagina, limite } = normalizarPaginacao(pagina, Math.min(limite, qtdFinal)));
     const cacheKey = `trending_${pagina}_${limite}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;

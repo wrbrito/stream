@@ -48,6 +48,16 @@ function AppContent() {
   const relatedCount = Number(configsPublicas.QTD_VIDEOS_RELACIONADOS ?? 4);
   const featuredVideosCount = Number.isNaN(featuredCount) ? 4 : featuredCount;
   const relatedVideosCount = Number.isNaN(relatedCount) ? 4 : relatedCount;
+  
+  // Configurações de recomendação
+  const showRecommended = configsPublicas.ATIVAR_RECOMENDADOS !== 'false';
+  const recommendedCount = Number(configsPublicas.QTD_VIDEOS_RECOMENDADOS ?? 10);
+  const recommendedVideosCount = Number.isNaN(recommendedCount) ? 10 : recommendedCount;
+  
+  // Configurações de em alta
+  const showTrending = configsPublicas.ATIVAR_EM_ALTA !== 'false';
+  const trendingCount = Number(configsPublicas.QTD_VIDEOS_EM_ALTA ?? 10);
+  const trendingVideosCount = Number.isNaN(trendingCount) ? 10 : trendingCount;
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -317,6 +327,10 @@ function AppContent() {
             onSearchQueryChange={setSearchQuery}
             showCategories={showCategories}
             featuredCount={featuredVideosCount}
+            showRecommended={showRecommended}
+            recommendedCount={recommendedVideosCount}
+            showTrending={showTrending}
+            trendingCount={trendingVideosCount}
           />
         )}
         {currentScreen === 'video' && selectedVideoId && (
