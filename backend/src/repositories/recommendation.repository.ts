@@ -1,120 +1,262 @@
 import { prisma } from '../lib/prisma.js';
 
+/**
+ * Repositório de recomendação.
+ *
+ * Objetivo: devolver dados já agregados/necessários para cálculo de score no service.
+ *
+ * Por performance:
+ * - evitar carregar arrays grandes (ex.: visualizações completas)
+ * - retornar apenas contagens/somas básicas
+ */
 export const RecommendationRepository = {
   /**
-   * Busca vídeos candidatos para recomendação.
-   * Filtra vídeos já assistidos se o userId for fornecido.
+   * Afinidade do usuário baseada no histórico de visualizações.
+   *
+   * - categoria: contagem de visualizações na categoria
+   * - tags: contagem de visualizações por tag
+   * - interesse: soma e pesos baseados em tempo assistido
    */
-  buscarCandidatos: async (userId?: number, limite: number = 50) => {
-    const assistidos = userId 
-      ? await prisma.visualizacao.findMany({
-          where: { usuarioId: userId },
-          select: { videoId: true }
-        }).then(v => v.map(i => i.videoId))
-      : [];
-
-    return prisma.video.findMany({
-      where: {
-        status: 'PUBLICADO', // Assumindo que este status existe ou é o objetivo
-        id: { notIn: assistidos }
-      },
-      include: {
-        categoria: true,
-        tags: true,
-        visualizacoes: {
-          select: { id: true, tempoAssistido: true }
+  buscarAfinidadeUsuario: async (userId: number) => {
+    const historico = await prisma.visualizacao.findMany({
+      where: { usuarioId: userId },
+      select: {
+        tempoAssistido: true,
+        video: {
+          select: {
+            categoriaId: true,
+            tags: { select: { id: true } },
+          },
         },
-        favoritos: {
-          select: { usuarioId: true }
-        }
       },
-      take: limite,
-      orderBy: { criadoEm: 'desc' }
+      orderBy: { id: 'desc' },
+      take: 500,
+    });
+
+    const categorias: Record<number, number> = {};
+    const tags: Record<number, number> = {};
+
+    const tempoAssistidoPorTagId: Record<number, number> = {};
+    const tempoAssistidoPorCategoriaId: Record<number, number> = {};
+
+    for (const h of historico) {
+      const categoriaId = h.video.categoriaId;
+      categorias[categoriaId] = (categorias[categoriaId] || 0) + 1;
+      tempoAssistidoPorCategoriaId[categoriaId] =
+        (tempoAssistidoPorCategoriaId[categoriaId] || 0) + (h.tempoAssistido || 0);
+
+      for (const t of h.video.tags) {
+        tags[t.id] = (tags[t.id] || 0) + 1;
+        tempoAssistidoPorTagId[t.id] = (tempoAssistidoPorTagId[t.id] || 0) + (h.tempoAssistido || 0);
+      }
+    }
+
+    return {
+      categorias,
+      tags,
+      tempoAssistidoPorTagId,
+      tempoAssistidoPorCategoriaId,
+    };
+  },
+
+  /**
+   * Busca vídeo base (categoria e tags) para montar lista de relacionados.
+   */
+  buscarVideoBase: async (videoId: number) => {
+    return prisma.video.findUnique({
+      where: { id: videoId },
+      select: {
+        id: true,
+        categoriaId: true,
+        tags: { select: { id: true } },
+      },
     });
   },
 
   /**
-   * Busca vídeos relacionados por categoria e tags.
+   * Busca candidatos para recomendação.
+   *
+   * Regras:
+   * - Filtra status PUBLICADO
+   * - Se userId existir: exclui vídeos já assistidos
+   *
+   * Retorna agregados:
+   * - viewsCount: total de visualizações
+   * - likesCount: total de favoritos
+   * - tempoAssistidoMedio (aprox): média do tempo assistido entre as últimas visualizações
+   *
+   * Observação: tempoAssistidoMedio é uma aproximação baseada em um subconjunto para manter performance.
    */
-  buscarRelacionados: async (videoId: number, categoriaId: number, tagIds: number[], limite: number = 10) => {
+  buscarCandidatosParaRecomendacao: async (userId: number | undefined, limite: number) => {
+    const assistidos = userId
+      ? await prisma.visualizacao.findMany({
+          where: { usuarioId: userId },
+          select: { videoId: true },
+        }).then((rows) => rows.map((r) => r.videoId))
+      : [];
+
+    const candidatos = await prisma.video.findMany({
+      where: {
+        status: 'PUBLICADO',
+        ...(userId ? { id: { notIn: assistidos } } : {}),
+      },
+      select: {
+        id: true,
+        titulo: true,
+        descricao: true,
+        autor: true,
+        tipo: true,
+        status: true,
+        urlOriginal: true,
+        caminhoArquivo: true,
+        miniatura: true,
+        criadoEm: true,
+        categoriaId: true,
+        categoria: { select: { id: true, nome: true } },
+        tags: { select: { id: true } },
+        _count: { select: { visualizacoes: true, favoritos: true } },
+        // recência/tempo: aproximar com últimas visualizações do próprio vídeo
+        visualizacoes: {
+          select: { tempoAssistido: true },
+          orderBy: { data: 'desc' },
+          take: 50,
+        },
+      },
+      take: limite,
+      orderBy: { criadoEm: 'desc' },
+    });
+
+    return candidatos.map((v) => {
+      const tempoAssistidoTotal = (v.visualizacoes || []).reduce((acc, x) => acc + (x.tempoAssistido || 0), 0);
+      const tempoAssistidoMedio = tempoAssistidoTotal / Math.max(1, (v.visualizacoes || []).length);
+
+      return {
+        ...v,
+        tagIds: v.tags.map((t) => t.id),
+        viewsCount: v._count.visualizacoes,
+        likesCount: v._count.favoritos,
+        tempoAssistidoTotal,
+        tempoAssistidoMedio,
+      };
+    });
+  },
+
+  /**
+   * Busca relacionados por categoria e tags.
+   */
+  buscarRelacionados: async (videoId: number, categoriaId: number, tagIds: number[], limite: number) => {
     return prisma.video.findMany({
       where: {
         id: { not: videoId },
         status: 'PUBLICADO',
         OR: [
           { categoriaId },
-          { tags: { some: { id: { in: tagIds } } } }
-        ]
+          ...(tagIds.length
+            ? [
+                {
+                  tags: {
+                    some: { id: { in: tagIds } },
+                  },
+                },
+              ]
+            : []),
+        ],
       },
-      include: {
-        categoria: true,
-        tags: true,
-        visualizacoes: { select: { id: true } },
-        favoritos: { select: { id: true } }
+      select: {
+        id: true,
+        titulo: true,
+        descricao: true,
+        autor: true,
+        tipo: true,
+        status: true,
+        urlOriginal: true,
+        caminhoArquivo: true,
+        miniatura: true,
+        criadoEm: true,
+        categoriaId: true,
+        categoria: { select: { id: true, nome: true } },
+        tags: { select: { id: true } },
+        _count: { select: { visualizacoes: true, favoritos: true } },
+        visualizacoes: {
+          select: { tempoAssistido: true },
+          orderBy: { data: 'desc' },
+          take: 50,
+        },
       },
-      take: limite
-    });
+      take: limite,
+      orderBy: { criadoEm: 'desc' },
+    }).then((rows) =>
+      rows.map((v) => {
+        const tempoAssistidoTotal = (v.visualizacoes || []).reduce((acc, x) => acc + (x.tempoAssistido || 0), 0);
+        const tempoAssistidoMedio = tempoAssistidoTotal / Math.max(1, (v.visualizacoes || []).length);
+
+        return {
+          ...v,
+          tagIds: v.tags.map((t) => t.id),
+          viewsCount: v._count.visualizacoes,
+          likesCount: v._count.favoritos,
+          tempoAssistidoTotal,
+          tempoAssistidoMedio,
+        };
+      })
+    );
   },
 
   /**
-   * Busca vídeos em alta (trending) baseados em visualizações recentes.
+   * Busca trending (em alta) em janela de tempo.
+   *
+   * Ranking final será ajustado no service pelo score híbrido,
+   * aqui garantimos janela e métricas.
    */
-  buscarTrending: async (limite: number = 10) => {
-    const umaSemanaAtras = new Date();
-    umaSemanaAtras.setDate(umaSemanaAtras.getDate() - 7);
+  buscarTrending: async (limite: number = 10, lookbackDias: number = 7) => {
+    const dataMin = new Date();
+    dataMin.setDate(dataMin.getDate() - lookbackDias);
 
     return prisma.video.findMany({
       where: {
         status: 'PUBLICADO',
         visualizacoes: {
-          some: {
-            data: { gte: umaSemanaAtras }
-          }
-        }
+          some: { data: { gte: dataMin } },
+        },
       },
-      include: {
-        categoria: true,
-        tags: true,
-        _count: {
-          select: { visualizacoes: true, favoritos: true }
-        }
+      select: {
+        id: true,
+        titulo: true,
+        descricao: true,
+        autor: true,
+        tipo: true,
+        status: true,
+        urlOriginal: true,
+        caminhoArquivo: true,
+        miniatura: true,
+        criadoEm: true,
+        categoriaId: true,
+        categoria: { select: { id: true, nome: true } },
+        tags: { select: { id: true } },
+        _count: { select: { visualizacoes: true, favoritos: true } },
+        visualizacoes: {
+          select: { tempoAssistido: true },
+          orderBy: { data: 'desc' },
+          take: 50,
+        },
       },
-      orderBy: [
-        { visualizacoes: { _count: 'desc' } },
-        { criadoEm: 'desc' }
-      ],
-      take: limite
-    });
+      take: limite,
+      orderBy: { criadoEm: 'desc' },
+    }).then((rows) =>
+      rows.map((v) => {
+        const tempoAssistidoTotal = (v.visualizacoes || []).reduce((acc, x) => acc + (x.tempoAssistido || 0), 0);
+        const tempoAssistidoMedio = tempoAssistidoTotal / Math.max(1, (v.visualizacoes || []).length);
+
+        return {
+          ...v,
+          tagIds: v.tags.map((t) => t.id),
+          viewsCount: v._count.visualizacoes,
+          likesCount: v._count.favoritos,
+          tempoAssistidoTotal,
+          tempoAssistidoMedio,
+        };
+      })
+    );
   },
-
-  /**
-   * Busca histórico de afinidade do usuário (categorias e tags que ele mais consome).
-   */
-  buscarAfinidadeUsuario: async (userId: number) => {
-    const historico = await prisma.visualizacao.findMany({
-      where: { usuarioId: userId },
-      include: {
-        video: {
-          include: {
-            tags: true
-          }
-        }
-      },
-      orderBy: { data: 'desc' },
-      take: 100
-    });
-
-    const categorias: Record<number, number> = {};
-    const tags: Record<number, number> = {};
-
-    historico.forEach(h => {
-      const vid = h.video;
-      categorias[vid.categoriaId] = (categorias[vid.categoriaId] || 0) + 1;
-      vid.tags.forEach(t => {
-        tags[t.id] = (tags[t.id] || 0) + 1;
-      });
-    });
-
-    return { categorias, tags };
-  }
 };
+
