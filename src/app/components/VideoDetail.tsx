@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { ArrowLeft, Calendar, Eye, Flag, Heart, Share2, Video as VideoIcon, Star, MessageSquare, Trash2, Send } from 'lucide-react';
 import { Button } from './Button';
 import { api, tratarErroApi } from '../../services/api';
@@ -836,11 +837,15 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                         ? relatedVideo.miniatura.split('/').pop() 
                         : relatedVideo.miniatura;
                       
+                      const relatedId = Number(relatedVideo.id);
+                      if (!Number.isFinite(relatedId)) return null;
+
+
                       return (
                       <div
-                        key={relatedVideo.id}
+                        key={relatedId}
                         className="group cursor-pointer border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors"
-                        onClick={() => onVideoClick ? onVideoClick(relatedVideo.id) : window.location.href = `?videoId=${relatedVideo.id}`}
+                        onClick={() => onVideoClick(relatedId)}
                       >
                         <div className="aspect-video bg-muted relative">
                           {(() => {
