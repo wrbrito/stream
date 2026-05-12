@@ -21,7 +21,8 @@ export const RecommendationController = {
 
   getRelated: async (req: Request, res: Response) => {
     try {
-      const videoId = parseInt(req.params.videoId);
+      const videoId = parseInt(req.params.videoId as string);
+
       const pagina = parseInt(req.query.pagina as string) || 1;
       const limite = parseInt(req.query.limite as string) || 10;
 

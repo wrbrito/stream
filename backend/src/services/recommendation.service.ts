@@ -1,6 +1,34 @@
 import { RecommendationRepository } from '../repositories/recommendation.repository.js';
 import { cache } from '../utils/cache.js';
 
+const normalize01 = (value: number, min: number, max: number) => {
+  if (max <= min) return 0;
+  const v = Math.min(max, Math.max(min, value));
+  return (v - min) / (max - min);
+};
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
+const daysSince = (date: Date) => (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+
+const hybridScore = (args: {
+  tagsScore: number;
+  categoriaScore: number;
+  popularidadeScore: number;
+  recenciaScore: number;
+  interesseUsuarioScore: number;
+}) => {
+  // Pesos conforme solicitado:
+  // 0.35 tags + 0.25 categoria + 0.20 popularidade + 0.10 recência + 0.10 interesse
+  return (
+    0.35 * args.tagsScore +
+    0.25 * args.categoriaScore +
+    0.20 * args.popularidadeScore +
+    0.10 * args.recenciaScore +
+    0.10 * args.interesseUsuarioScore
+  );
+};
+
 export const RecommendationService = {
   /**
    * Obtém vídeos recomendados personalizados para um usuário.
@@ -10,50 +38,66 @@ export const RecommendationService = {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
-    // 1. Buscar afinidade do usuário (categorias e tags preferidas)
     const afinidade = await RecommendationRepository.buscarAfinidadeUsuario(userId);
-    
-    // 2. Buscar candidatos (excluindo os já assistidos)
-    const candidatos = await RecommendationRepository.buscarCandidatos(userId, 100);
 
-    // 3. Calcular scores
-    const scoredVideos = candidatos.map(video => {
-      let score = 0;
+    // pool inicial maior para permitir ranking; paginamos no service
+    const candidatos = await RecommendationRepository.buscarCandidatosParaRecomendacao(userId, 200);
 
-      // Categoria (25%)
-      if (afinidade.categorias[video.categoriaId]) {
-        score += 0.25 * (afinidade.categorias[video.categoriaId] / 10); // Normalizado
-      }
+    const allScores = candidatos.map((video) => {
+      // 1) tags: similaridade por interseção
+      const matchingTags = video.tagIds.filter(
+        (id: number) => (afinidade.tags || {})[id] !== undefined
+      );
+      // normaliza por quantidade de tags do vídeo (heurística simples)
+      const tagsScore = clamp01(
+        matchingTags.length / Math.max(1, video.tagIds.length)
+      );
 
-      // Tags (35%)
-      const matchingTags = video.tags.filter(t => afinidade.tags[t.id]);
-      if (matchingTags.length > 0) {
-        score += 0.35 * (matchingTags.length / 5); // Ex: 5 tags batendo = bônus máximo
-      }
 
-      // Popularidade (20%)
-      const viewsCount = video.visualizacoes.length;
-      const likesCount = video.favoritos.length;
-      const popScore = Math.min((viewsCount * 0.1 + likesCount * 0.5) / 10, 1);
-      score += 0.20 * popScore;
+      // 2) categoria: mesma categoria no histórico
+      const categoriaCount = (afinidade.categorias || {})[video.categoriaId] || 0;
+      // normaliza por faixa (heurística simples)
+      const categoriaScore = clamp01(normalize01(categoriaCount, 0, 50));
 
-      // Recência (10%)
-      const diasDesdeCriacao = (Date.now() - video.criadoEm.getTime()) / (1000 * 60 * 60 * 24);
-      const recenciaScore = Math.max(0, 1 - (diasDesdeCriacao / 30)); // Decai em 30 dias
-      score += 0.10 * recenciaScore;
+      // 3) popularidade: views e likes agregados
+      const viewsCount = video.viewsCount || 0;
+      const likesCount = video.likesCount || 0;
+      // normalização por faixas típicas
+      const viewsScore = normalize01(viewsCount, 0, 1000);
+      const likesScore = normalize01(likesCount, 0, 200);
+      const popularidadeScore = clamp01(0.7 * viewsScore + 0.3 * likesScore);
 
-      // Interesse/Afinidade Extra (10%)
-      const favoritouCategoria = video.favoritos.some(f => f.usuarioId === userId);
-      if (favoritouCategoria) score += 0.05;
-      
-      const tempoMedio = video.visualizacoes.reduce((acc, v) => acc + v.tempoAssistido, 0) / (viewsCount || 1);
-      if (tempoMedio > 60) score += 0.05;
+      // 4) recência: bônus para vídeos mais recentes
+      const d = daysSince(video.criadoEm);
+      // decai até 30 dias
+      const recenciaScore = clamp01(1 - d / 30);
 
-      return { ...video, recommendationScore: score };
+      // 5) interesse do usuário: baseado em tempo assistido (tags e categoria)
+      const tempoCategoria = (afinidade.tempoAssistidoPorCategoriaId || {})[video.categoriaId] || 0;
+      const tempoTagsSoma = matchingTags.reduce((acc: number, tagId: number) => {
+        return acc + ((afinidade.tempoAssistidoPorTagId || {})[tagId] || 0);
+      }, 0);
+      const tempoInteresse = tempoCategoria * 0.6 + tempoTagsSoma * 0.4;
+      const interesseUsuarioScore = clamp01(normalize01(tempoInteresse, 0, 5000));
+
+      const recommendationScore = hybridScore({
+        tagsScore,
+        categoriaScore,
+        popularidadeScore,
+        recenciaScore,
+        interesseUsuarioScore,
+      });
+
+      return { ...video, recommendationScore, scoreBreakdown: {
+        tagsScore,
+        categoriaScore,
+        popularidadeScore,
+        recenciaScore,
+        interesseUsuarioScore,
+      }};
     });
 
-    // 4. Ordenar e paginar
-    const sorted = scoredVideos.sort((a, b) => b.recommendationScore - a.recommendationScore);
+    const sorted = allScores.sort((a, b) => b.recommendationScore - a.recommendationScore);
     const start = (pagina - 1) * limite;
     const paginated = sorted.slice(start, start + limite);
 
@@ -61,12 +105,13 @@ export const RecommendationService = {
       videos: paginated,
       total: sorted.length,
       pagina,
-      limite
+      limite,
     };
 
-    cache.set(cacheKey, result, 300000); // 5 minutos
+    cache.set(cacheKey, result, 300000); // 5 min
     return result;
   },
+
 
   /**
    * Obtém vídeos relacionados a um vídeo específico.
@@ -76,42 +121,58 @@ export const RecommendationService = {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
-    // 1. Pegar detalhes do vídeo base
-    const videoBase = await RecommendationRepository.buscarCandidatos(undefined, 100);
-    const currentVideo = videoBase.find(v => v.id === videoId);
-
+    // 1. Pegar detalhes do vídeo base (categoria + tags)
+    const currentVideo = await RecommendationRepository.buscarVideoBase(videoId);
     if (!currentVideo) return { videos: [], total: 0 };
 
-    const tagIds = currentVideo.tags.map(t => t.id);
-    
+    const tagIds = currentVideo.tags.map((t: { id: number }) => t.id);
+
     // 2. Buscar candidatos relacionados
     const candidatos = await RecommendationRepository.buscarRelacionados(
-      videoId, 
-      currentVideo.categoriaId, 
-      tagIds, 
-      50
+      videoId,
+      currentVideo.categoriaId,
+      tagIds,
+      100
     );
 
-    // 3. Score simplificado para relacionados
-    const scored = candidatos.map(video => {
-      let score = 0;
-      if (video.categoriaId === currentVideo.categoriaId) score += 0.4;
-      
-      const commonTags = video.tags.filter(t => tagIds.includes(t.id)).length;
-      score += (commonTags / (tagIds.length || 1)) * 0.6;
+    // 3. Score híbrido simplificado para relacionados (mantém regras principais)
+    const scored = candidatos.map((video: any) => {
+      const tagsSimilares = video.tagIds.filter((id: number) => tagIds.includes(id)).length;
+      const tagsScore = clamp01(tagsSimilares / Math.max(1, tagIds.length));
 
-      return { ...video, recommendationScore: score };
+      const categoriaScore = video.categoriaId === currentVideo.categoriaId ? 1 : 0;
+
+      const viewsScore = normalize01(video.viewsCount || 0, 0, 1000);
+      const likesScore = normalize01(video.likesCount || 0, 0, 200);
+      const popularidadeScore = clamp01(0.7 * viewsScore + 0.3 * likesScore);
+
+      const d = daysSince(video.criadoEm);
+      const recenciaScore = clamp01(1 - d / 30);
+
+      // relacionado não tem afinidade de usuário -> interesse neutro baseado em tempo assistido do vídeo
+      const interesseUsuarioScore = clamp01(normalize01(video.tempoAssistidoMedio || 0, 0, 300));
+
+      const recommendationScore = hybridScore({
+        tagsScore,
+        categoriaScore,
+        popularidadeScore,
+        recenciaScore,
+        interesseUsuarioScore,
+      });
+
+      return { ...video, recommendationScore };
     });
 
-    const sorted = scored.sort((a, b) => b.recommendationScore - a.recommendationScore);
+    const sorted = scored.sort((a: any, b: any) => b.recommendationScore - a.recommendationScore);
     const start = (pagina - 1) * limite;
-    
+
     const result = {
       videos: sorted.slice(start, start + limite),
       total: sorted.length,
       pagina,
-      limite
+      limite,
     };
+
 
     cache.set(cacheKey, result, 900000); // 15 minutos
     return result;
