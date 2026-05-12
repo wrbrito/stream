@@ -4,7 +4,8 @@
 
 
 - [x] Step 2: Refatorar `RecommendationRepository` para devolver dados agregados e evitar N+1
-- [ ] Step 3: Implementar score híbrido fiel + ranking + paginação em `RecommendationService`
+- [x] Step 3: Implementar score híbrido fiel + ranking + paginação em `RecommendationService`
+
 - [ ] Step 4: Atualizar `VideoDetail.tsx` para consumir `GET /api/recommendations/related/:videoId`
 - [ ] Step 5: Ajustar cliente/API no frontend (`src/services/api.ts`) se necessário
 - [ ] Step 6: Sugerir e implementar índices no `backend/prisma/schema.prisma` e rodar migração
