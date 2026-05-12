@@ -1,8 +1,8 @@
 12/05/2026
 
-- antes da importação do video é que deve ser feita a escolha da qualidade
-- em  assistir video, no lado direito poderia ser exibido os icones/cards de videos relacionados - PARCIALMENTE: relatedVideos carrega dados via API mas não renderiza na tela, precisa adicionar seção de exibição
-- ainda em editar, deve poder enviar uma miniatura - PARCIALMENTE: upload de thumbnail está implementado no UploadVideo.tsx, mas não na edição em AdminPanel
+- antes da importação do video é que deve ser feita a escolha da qualidade - IMPLEMENTADO: seleção de qualidade já disponível globalmente no AdminPanel
+- em  assistir video, no lado direito poderia ser exibido os icones/cards de videos relacionados - IMPLEMENTADO: seção de vídeos relacionados adicionada no VideoDetail.tsx
+- ainda em editar, deve poder enviar uma miniatura - IMPLEMENTADO: upload de thumbnail adicionado no AdminPanel.tsx e suporte no backend
 
 
 ==============
