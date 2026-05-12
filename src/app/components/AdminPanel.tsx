@@ -160,6 +160,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     status: string;
     tipo: string;
     urlOriginal: string;
+    miniaturaFile?: File;
   } | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editingUserData, setEditingUserData] = useState({
@@ -347,6 +348,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
       status: video.status,
       tipo: video.tipo,
       urlOriginal: video.urlOriginal ?? '',
+      miniaturaFile: undefined,
     });
   };
 
@@ -360,18 +362,35 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     if (!editingVideoId || !editingVideoData) return;
 
     try {
-      const updates: Record<string, unknown> = {
-        titulo: editingVideoData.titulo,
-        descricao: editingVideoData.descricao,
-        autor: editingVideoData.autor,
-        categoriaId: editingVideoData.categoriaId,
-        status: editingVideoData.status,
-        tipo: editingVideoData.tipo,
-        ...(editingVideoData.tipo === 'YOUTUBE' && editingVideoData.urlOriginal.trim()
-          ? { urlOriginal: editingVideoData.urlOriginal.trim() }
-          : {}),
-      };
-      await api.videos.atualizar(editingVideoId, updates);
+      if (editingVideoData.miniaturaFile) {
+        // Usar FormData para upload de arquivo
+        const formData = new FormData();
+        formData.append('titulo', editingVideoData.titulo);
+        formData.append('descricao', editingVideoData.descricao);
+        formData.append('autor', editingVideoData.autor);
+        formData.append('categoriaId', String(editingVideoData.categoriaId));
+        formData.append('status', editingVideoData.status);
+        formData.append('tipo', editingVideoData.tipo);
+        if (editingVideoData.tipo === 'YOUTUBE' && editingVideoData.urlOriginal.trim()) {
+          formData.append('urlOriginal', editingVideoData.urlOriginal.trim());
+        }
+        formData.append('miniatura', editingVideoData.miniaturaFile);
+        await api.videos.atualizarComArquivo(editingVideoId, formData);
+      } else {
+        // Atualização normal sem arquivo
+        const updates: Record<string, unknown> = {
+          titulo: editingVideoData.titulo,
+          descricao: editingVideoData.descricao,
+          autor: editingVideoData.autor,
+          categoriaId: editingVideoData.categoriaId,
+          status: editingVideoData.status,
+          tipo: editingVideoData.tipo,
+          ...(editingVideoData.tipo === 'YOUTUBE' && editingVideoData.urlOriginal.trim()
+            ? { urlOriginal: editingVideoData.urlOriginal.trim() }
+            : {}),
+        };
+        await api.videos.atualizar(editingVideoId, updates);
+      }
       setEditingVideoId(null);
       setEditingVideoData(null);
       await carregarDados();
@@ -698,6 +717,29 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                   <option value="PROCESSANDO">Processando</option>
                   <option value="ERRO">Erro</option>
                 </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2 text-foreground dark:text-foreground">Miniatura (opcional)</label>
+                <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setEditingVideoData((prev) => prev ? { ...prev, miniaturaFile: file } : prev);
+                      }
+                    }}
+                    className="hidden"
+                    id="thumbnail-edit"
+                  />
+                  <label htmlFor="thumbnail-edit" className="cursor-pointer">
+                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {editingVideoData.miniaturaFile ? editingVideoData.miniaturaFile.name : 'Clique para selecionar uma miniatura'}
+                    </p>
+                  </label>
+                </div>
               </div>
               {editingVideoData.tipo === 'YOUTUBE' && (
                 <div className="md:col-span-2">

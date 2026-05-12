@@ -801,10 +801,51 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
           <aside className="lg:col-span-1">
             <div className="bg-card rounded-xl border border-border p-6 shadow-sm sticky top-24 space-y-6">
               <div>
-                <h3 className="font-medium text-foreground mb-3">Detalhes</h3>
-                <p className="text-sm text-muted-foreground">
-                  Este video foi carregado diretamente da API usando o ID {video.id}.
-                </p>
+                <h3 className="font-medium text-foreground mb-3">Vídeos Relacionados</h3>
+                {relatedVideos.length > 0 ? (
+                  <div className="space-y-3">
+                    {relatedVideos.map((relatedVideo) => (
+                      <div
+                        key={relatedVideo.id}
+                        className="group cursor-pointer border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors"
+                        onClick={() => window.location.href = `/video/${relatedVideo.id}`}
+                      >
+                        <div className="aspect-video bg-muted relative">
+                          {relatedVideo.miniatura ? (
+                            <img
+                              src={`${BASE_URL}/uploads/thumbnails/${relatedVideo.miniatura}`}
+                              alt={relatedVideo.titulo}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-muted">
+                              <VideoIcon className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm text-foreground line-clamp-2 mb-1">
+                            {relatedVideo.titulo}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {relatedVideo.autor}
+                          </p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Eye className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {contarVisualizacoes(relatedVideo.visualizacoes)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum vídeo relacionado encontrado.
+                  </p>
+                )}
               </div>
               {usuario?.perfil === 'ADMIN' && (
                 <div className="border-t border-border pt-4">

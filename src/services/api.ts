@@ -263,6 +263,14 @@ export const api = {
       });
     },
 
+    atualizarComArquivo: async (id: number, formData: FormData) => {
+      return api.fetch(`/videos/${id}`, {
+        method: 'PUT',
+        headers: {}, // FormData define content-type automaticamente
+        body: formData,
+      });
+    },
+
     deletar: async (id: number) => {
       return api.fetch(`/videos/${id}`, {
         method: 'DELETE',

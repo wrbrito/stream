@@ -106,7 +106,15 @@ export const VideosController = {
   },
 
   atualizar: async (req: Request, res: Response) => {
-    const video = await VideoService.atualizar(Number(req.params.id), req.body);
+    const miniatura = req.files && (req.files as any).miniatura ? (req.files as any).miniatura[0] : undefined;
+    const caminhoMiniatura = miniatura ? `/uploads/thumbnails/${miniatura.filename}` : undefined;
+
+    const dadosAtualizacao = {
+      ...req.body,
+      ...(caminhoMiniatura && { miniatura: caminhoMiniatura }),
+    };
+
+    const video = await VideoService.atualizar(Number(req.params.id), dadosAtualizacao);
     return res.json({ sucesso: true, dados: video });
   },
 
