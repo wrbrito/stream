@@ -1,7 +1,10 @@
 12/05/2026
 
+- [x] os videos da lateral direita não estão funcionais, as previas (thumb) não estão aparecendo, ao clicar no video não esta sendo direcionado para o video... - CORRIGIDO: navegação por callback, miniaturas extraem corretamente o nome do arquivo
+- [x] como cada video é recomendado do lado direito? por categoria e visualização? - EXPLICADO: vídeos relacionados são filtrados por categoria do vídeo atual e ordenados por número de visualizações (mais populares primeiro)
+----
 - antes da importação do video é que deve ser feita a escolha da qualidade - IMPLEMENTADO: seleção de qualidade já disponível globalmente no AdminPanel
-- em  assistir video, no lado direito poderia ser exibido os icones/cards de videos relacionados - IMPLEMENTADO: seção de vídeos relacionados adicionada no VideoDetail.tsx
+- em  assistir video, no lado direito poderia ser exibido os icones/cards de videos relacionados - IMPLEMENTADO: seção de vídeos relacionados adicionada no VideoDetail.tsx com navegação funcional
 - ainda em editar, deve poder enviar uma miniatura - IMPLEMENTADO: upload de thumbnail adicionado no AdminPanel.tsx e suporte no backend
 
 
