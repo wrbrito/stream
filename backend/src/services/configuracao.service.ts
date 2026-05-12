@@ -31,6 +31,8 @@ export const ConfiguracaoService = {
       'RODAPE_GESTOR_EMAIL',
       'RODAPE_ESCRITO_POR',
       'RODAPE_ESCRITO_POR_EMAIL',
+      'QTD_VIDEOS_DESTAQUE',
+      'QTD_VIDEOS_RELACIONADOS',
     ];
 
     return chavesPublicas.reduce((acc, chave) => {
