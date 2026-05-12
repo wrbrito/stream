@@ -23,6 +23,12 @@ function AppContent() {
   const { isAuthenticated, isLoading, logout, usuario } = useAuth();
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
   const [configsPublicas, setConfigsPublicas] = useState<Record<string, string>>({});
   const [selectedNotification, setSelectedNotification] = useState<{
     id: number;

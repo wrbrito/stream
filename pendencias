@@ -78,7 +78,6 @@ Quero que você:
 11. Explique decisões arquiteturais
 12. Prepare o sistema para futuramente usar IA/embeddings
 
-- [x] permitir admin escolher a quantidade de vídeos em destaque e a quantidade de vídeos relacionados - IMPLEMENTADO
 
 Importante:
 - quero código limpo
@@ -106,6 +105,9 @@ No final explique:
 
 
 ------------
+
+
+- [x] permitir admin escolher a quantidade de vídeos em destaque e a quantidade de vídeos relacionados - IMPLEMENTADO
 - [x] os videos da lateral direita não estão funcionais, as previas (thumb) não estão aparecendo, ao clicar no video não esta sendo direcionado para o video... - CORRIGIDO: navegação por callback, miniaturas extraem corretamente o nome do arquivo
 - [x] como cada video é recomendado do lado direito? por categoria e visualização? - EXPLICADO: vídeos relacionados são filtrados por categoria do vídeo atual e ordenados por número de visualizações (mais populares primeiro)
 ----

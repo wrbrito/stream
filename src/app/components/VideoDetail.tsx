@@ -81,6 +81,28 @@ function contarVisualizacoes(valor: ApiVideo['visualizacoes']) {
   return Array.isArray(valor) ? valor.length : Number(valor ?? 0);
 }
 
+function obterThumbnailUrl(video: ApiVideo): string | null {
+  if (video.miniatura) {
+    const path = video.miniatura;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+      return path;
+    }
+    if (path.startsWith('/')) {
+      return `${BASE_URL}${path}`;
+    }
+    return `${BASE_URL}/uploads/thumbnails/${path}`;
+  }
+
+  if (video.tipo === 'YOUTUBE' && video.urlOriginal) {
+    const youtubeId = extrairYoutubeId(video.urlOriginal);
+    if (youtubeId) {
+      return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+    }
+  }
+
+  return null;
+}
+
 // Construir URL base dinamicamente baseada no host atual
 const getBaseUrl = (): string => {
   // Se houver variável de ambiente definida, usar ela
@@ -98,7 +120,7 @@ const getBaseUrl = (): string => {
 
 const BASE_URL = getBaseUrl();
 
-export function VideoDetail({ onBack, videoId, onVideoClick }: VideoDetailProps) {
+export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }: VideoDetailProps) {
   const { usuario } = useAuth();
   const [video, setVideo] = useState<ApiVideo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -820,21 +842,23 @@ export function VideoDetail({ onBack, videoId, onVideoClick }: VideoDetailProps)
                         onClick={() => onVideoClick ? onVideoClick(relatedVideo.id) : window.location.href = `?videoId=${relatedVideo.id}`}
                       >
                         <div className="aspect-video bg-muted relative">
-                          {relatedVideo.miniatura && miniaturaPath ? (
-                            <img
-                              src={`${BASE_URL}/uploads/thumbnails/${miniaturaPath}`}
-                              alt={relatedVideo.titulo}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                // Fallback se a imagem não carregar
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-muted">
-                              <VideoIcon className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                          )}
+                          {(() => {
+                            const thumbnailUrl = obterThumbnailUrl(relatedVideo);
+                            return thumbnailUrl ? (
+                              <img
+                                src={thumbnailUrl}
+                                alt={relatedVideo.titulo}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-muted">
+                                <VideoIcon className="w-8 h-8 text-muted-foreground" />
+                              </div>
+                            );
+                          })()}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                         </div>
                         <div className="p-3">
