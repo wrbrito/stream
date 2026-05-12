@@ -1,5 +1,111 @@
 12/05/2026
 
+
+Quero implementar um sistema de recomendação de vídeos para uma plataforma escolar interna.
+
+A plataforma já existe e preciso adicionar uma arquitetura de recomendação escalável, começando simples mas preparada para crescer futuramente.
+
+Objetivo:
+- recomendar vídeos relevantes para alunos
+- exibir "Vídeos recomendados"
+- exibir "Vídeos relacionados"
+- exibir "Em alta"
+- evitar IA complexa inicialmente
+- criar uma estrutura preparada para machine learning no futuro
+
+Tecnologias:
+- backend já existente
+- usar arquitetura limpa
+- código modular
+- funções reutilizáveis
+- performance importante
+
+Quero que o sistema funcione baseado em:
+
+1. Categoria do vídeo
+2. Tags/palavras-chave
+3. Quantidade de visualizações
+4. Likes
+5. Recência
+6. Histórico do usuário
+7. Tempo assistido
+8. Evitar recomendar vídeos já assistidos
+
+Preciso de um algoritmo de score híbrido.
+
+Use algo parecido com:
+
+score =
+0.35 * tags +
+0.25 * categoria +
+0.20 * popularidade +
+0.10 * recência +
+0.10 * interesse_usuario
+
+Regras:
+- tags semelhantes aumentam score
+- mesma categoria aumenta score
+- vídeos recentes recebem bônus
+- vídeos populares recebem bônus
+- vídeos já vistos devem perder prioridade
+- vídeos curtidos pelo usuário aumentam afinidade
+- tempo assistido influencia interesse
+
+Estrutura desejada:
+
+Tabelas:
+- videos
+- video_tags
+- users
+- watch_history
+- likes
+
+Quero que você:
+
+1. Projete a arquitetura do recomendador
+2. Crie as funções principais
+3. Crie a lógica de score
+4. Crie queries otimizadas
+5. Sugira índices SQL
+6. Separe responsabilidades em services/repositories
+7. Crie um RecommendationService
+8. Crie métodos:
+   - getRecommendedVideos(userId)
+   - getRelatedVideos(videoId)
+   - getTrendingVideos()
+9. Implemente paginação
+10. Implemente cache
+11. Explique decisões arquiteturais
+12. Prepare o sistema para futuramente usar IA/embeddings
+
+- [x] permitir admin escolher a quantidade de vídeos em destaque e a quantidade de vídeos relacionados - IMPLEMENTADO
+
+Importante:
+- quero código limpo
+- escalável
+- preparado para crescimento
+- sem overengineering
+- com comentários explicativos
+- usando boas práticas
+- evitando N+1 queries
+
+Quero implementação completa:
+- models
+- services
+- repositories
+- SQL
+- exemplos de retorno
+- cálculo de score
+- estratégia de ranking
+- otimizações
+
+No final explique:
+- como escalar isso para milhares de vídeos
+- como evoluir para recomendação com IA
+- como integrar embeddings futuramente
+
+
+------------
 - [x] os videos da lateral direita não estão funcionais, as previas (thumb) não estão aparecendo, ao clicar no video não esta sendo direcionado para o video... - CORRIGIDO: navegação por callback, miniaturas extraem corretamente o nome do arquivo
 - [x] como cada video é recomendado do lado direito? por categoria e visualização? - EXPLICADO: vídeos relacionados são filtrados por categoria do vídeo atual e ordenados por número de visualizações (mais populares primeiro)
 ----

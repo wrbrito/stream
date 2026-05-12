@@ -14,6 +14,7 @@ interface HomeProps {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   showCategories?: boolean;
+  featuredCount?: number;
 }
 
 const categories = [
@@ -115,7 +116,7 @@ function normalizarVideo(video: ApiVideo): Video {
   };
 }
 
-export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories }: HomeProps) {
+export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories, featuredCount = 4 }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [destaques, setDestaques] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +169,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
       // Buscar destaques (populares) separadamente apenas quando não houver busca/categoria ativa
       if (shouldShowDestaques) {
         try {
-          const respDestaques = await api.videos.listar(1, 6, undefined, undefined, 'populares');
+          const respDestaques = await api.videos.listar(1, featuredCount, undefined, undefined, 'populares');
           const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
           const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
           setDestaques(listaDestaques.map(normalizarVideo));
@@ -318,7 +319,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {destaques.slice(0, 4).map((video) => (
+                {destaques.slice(0, featuredCount).map((video) => (
                   <button
                     key={`destaque-${video.id}`}
                     onClick={() => onVideoClick(video.id)}

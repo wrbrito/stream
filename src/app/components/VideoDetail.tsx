@@ -8,6 +8,7 @@ interface VideoDetailProps {
   onBack: () => void;
   videoId: number;
   onVideoClick?: (videoId: number) => void;
+  relatedCount?: number;
 }
 
 interface ApiVideo {
@@ -173,7 +174,8 @@ export function VideoDetail({ onBack, videoId, onVideoClick }: VideoDetailProps)
 
         if (ativo) {
           const categoriaId = Number(video?.categoria?.id || 0) || undefined;
-          const relatedResponse = await api.videos.listar(1, 4, undefined, categoriaId, 'populares');
+          const maxRelated = relatedCount ?? 4;
+          const relatedResponse = await api.videos.listar(1, maxRelated, undefined, categoriaId, 'populares');
           const relatedDados = relatedResponse.dados as ApiVideo[] | { videos: ApiVideo[] } | undefined;
           const relatedLista = Array.isArray(relatedDados) ? relatedDados : relatedDados?.videos ?? [];
           setRelatedVideos(relatedLista.filter((item) => item.id !== videoId));

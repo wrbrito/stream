@@ -193,6 +193,8 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const [localFooterGestorEmail, setLocalFooterGestorEmail] = useState('');
   const [localFooterAutor, setLocalFooterAutor] = useState('');
   const [localFooterAutorEmail, setLocalFooterAutorEmail] = useState('');
+  const [localFeaturedCount, setLocalFeaturedCount] = useState(4);
+  const [localRelatedCount, setLocalRelatedCount] = useState(4);
 
   useEffect(() => {
     if (globalConfigs.WATERMARK_TEXT) setLocalWatermarkText(globalConfigs.WATERMARK_TEXT);
@@ -206,6 +208,11 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     if (globalConfigs.RODAPE_GESTOR_EMAIL) setLocalFooterGestorEmail(globalConfigs.RODAPE_GESTOR_EMAIL);
     if (globalConfigs.RODAPE_ESCRITO_POR) setLocalFooterAutor(globalConfigs.RODAPE_ESCRITO_POR);
     if (globalConfigs.RODAPE_ESCRITO_POR_EMAIL) setLocalFooterAutorEmail(globalConfigs.RODAPE_ESCRITO_POR_EMAIL);
+
+    const destaqueCount = Number(globalConfigs.QTD_VIDEOS_DESTAQUE);
+    setLocalFeaturedCount(Number.isNaN(destaqueCount) ? 4 : destaqueCount);
+    const relacionadosCount = Number(globalConfigs.QTD_VIDEOS_RELACIONADOS);
+    setLocalRelatedCount(Number.isNaN(relacionadosCount) ? 4 : relacionadosCount);
   }, [globalConfigs]);
 
 
@@ -1371,6 +1378,8 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         RODAPE_GESTOR_EMAIL: localFooterGestorEmail,
         RODAPE_ESCRITO_POR: localFooterAutor,
         RODAPE_ESCRITO_POR_EMAIL: localFooterAutorEmail,
+        QTD_VIDEOS_DESTAQUE: String(localFeaturedCount),
+        QTD_VIDEOS_RELACIONADOS: String(localRelatedCount),
       });
       // Atualiza também o seletor de importação para consistência imediata
     };
@@ -1489,6 +1498,31 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                 />
                 <span className="text-sm font-medium text-foreground">Exibir rodapé</span>
               </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos em destaque</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={localFeaturedCount}
+                  onChange={(e) => setLocalFeaturedCount(Number(e.target.value) || 0)}
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="4"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos relacionados</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={localRelatedCount}
+                  onChange={(e) => setLocalRelatedCount(Number(e.target.value) || 0)}
+                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="4"
+                />
+              </div>
             </div>
 
             <div className="border-t border-border pt-4 mt-4">

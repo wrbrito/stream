@@ -38,12 +38,10 @@ function AppContent() {
    const gestorEmail = configsPublicas.RODAPE_GESTOR_EMAIL || 'alberto.brasileiro@colegiodamas.com.br';
    const escritoPor = configsPublicas.RODAPE_ESCRITO_POR || 'Escrito por: William Ramos de Brito';
    const escritoPorEmail = configsPublicas.RODAPE_ESCRITO_POR_EMAIL || 'william.brito@colegiodamas.com.br';
-
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
-
+  const featuredCount = Number(configsPublicas.QTD_VIDEOS_DESTAQUE ?? 4);
+  const relatedCount = Number(configsPublicas.QTD_VIDEOS_RELACIONADOS ?? 4);
+  const featuredVideosCount = Number.isNaN(featuredCount) ? 4 : featuredCount;
+  const relatedVideosCount = Number.isNaN(relatedCount) ? 4 : relatedCount;
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -312,10 +310,11 @@ function AppContent() {
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             showCategories={showCategories}
+            featuredCount={featuredVideosCount}
           />
         )}
         {currentScreen === 'video' && selectedVideoId && (
-          <VideoDetail onBack={handleBackToHome} videoId={selectedVideoId} onVideoClick={handleVideoClick} />
+          <VideoDetail onBack={handleBackToHome} videoId={selectedVideoId} onVideoClick={handleVideoClick} relatedCount={relatedVideosCount} />
         )}
         {currentScreen === 'upload' && <UploadVideo onBack={handleBackToHome} />}
         {currentScreen === 'admin' && (
