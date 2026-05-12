@@ -8,7 +8,7 @@
 
 - [x] Step 4: Atualizar `VideoDetail.tsx` para consumir `GET /api/recommendations/related/:videoId`
 
-- [ ] Step 5: Ajustar cliente/API no frontend (`src/services/api.ts`) se necessário
+
 - [ ] Step 6: Sugerir e implementar índices no `backend/prisma/schema.prisma` e rodar migração
 - [ ] Step 7: Preparar ganchos para embeddings/IA (sem implementar embeddings)
 
