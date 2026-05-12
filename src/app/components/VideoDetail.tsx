@@ -197,10 +197,11 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
         if (ativo) {
           const categoriaId = Number(video?.categoria?.id || 0) || undefined;
           const maxRelated = relatedCount ?? 4;
-          const relatedResponse = await api.videos.listar(1, maxRelated, undefined, categoriaId, 'populares');
-          const relatedDados = relatedResponse.dados as ApiVideo[] | { videos: ApiVideo[] } | undefined;
-          const relatedLista = Array.isArray(relatedDados) ? relatedDados : relatedDados?.videos ?? [];
-          setRelatedVideos(relatedLista.filter((item) => item.id !== videoId));
+          const relatedResponse = await api.recommendations.related(videoId, 1, maxRelated);
+          const relatedDados = relatedResponse.dados as { videos: ApiVideo[]; total?: number } | { videos: ApiVideo[] } | any;
+          const relatedLista = relatedDados?.videos ?? [];
+          setRelatedVideos(relatedLista.filter((item: ApiVideo) => item.id !== videoId));
+
         }
       } catch (erro) {
         if (ativo) {
