@@ -499,6 +499,21 @@ export const api = {
     },
   },
 
+  recommendations: {
+    recommended: async (pagina: number = 1, limite: number = 10) => {
+      const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+      return api.fetch(`/recommendations/recommended?${params.toString()}`);
+    },
+    related: async (videoId: number, pagina: number = 1, limite: number = 10) => {
+      const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+      return api.fetch(`/recommendations/related/${videoId}?${params.toString()}`);
+    },
+    trending: async (pagina: number = 1, limite: number = 10) => {
+      const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+      return api.fetch(`/recommendations/trending?${params.toString()}`);
+    },
+  },
+
   configuracoes: {
     publicas: async () => {
       return api.fetch('/configuracoes/publicas');
