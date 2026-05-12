@@ -5,17 +5,20 @@ import { CategoriaRepository } from '../repositories/categoria.repository.js';
 import { ProcessamentoService } from './processamento.service.js';
 import { NotificationService } from './notification.service.js';
 import { UsuarioRepository } from '../repositories/usuario.repository.js';
+import { cache } from '../utils/cache.js';
 
 export const VideoService = {
   listar: VideoRepository.listar,
   buscarPorId: VideoRepository.buscarPorId,
-  registrarVisualizacao: async (id: number, usuarioId?: number) => {
+  registrarVisualizacao: async (id: number, usuarioId?: number, tempoAssistido: number = 0) => {
     const video = await VideoRepository.buscarPorId(id);
     if (!video) {
       throw new Error('Video nao encontrado');
     }
 
-    return VideoRepository.registrarVisualizacao(id, usuarioId);
+    const visualizacao = await VideoRepository.registrarVisualizacao(id, usuarioId, tempoAssistido);
+    cache.clear();
+    return visualizacao;
   },
 
   criar: async (dados: {
@@ -67,10 +70,12 @@ export const VideoService = {
       throw new Error('Vídeo não encontrado');
     }
     await VideoRepository.favoritar(id, usuarioId);
+    cache.clear();
   },
 
   desfavoritar: async (id: number, usuarioId: number) => {
     await VideoRepository.desfavoritar(id, usuarioId);
+    cache.clear();
   },
 
   verificarFavorito: async (id: number, usuarioId: number) => {

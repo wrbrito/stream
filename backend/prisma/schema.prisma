@@ -76,6 +76,9 @@ model Video {
 
   @@index([categoriaId])
   @@index([status, criadoEm])
+  @@index([status, categoriaId]) // Para recomendações relacionadas
+  @@index([criadoEm]) // Para recência
+  @@index([status]) // Para filtrar vídeos ativos
 }
 
 model Visualizacao {
@@ -89,6 +92,11 @@ model Visualizacao {
 
   @@index([usuarioId])
   @@index([data])
+  @@index([videoId])
+  @@index([usuarioId, videoId])
+  @@index([usuarioId, data])
+  @@index([data, videoId]) // Para trending por período
+  @@index([videoId, data]) // Para agregações por vídeo
 }
 
 model Favorito {
@@ -100,6 +108,9 @@ model Favorito {
   criadoEm  DateTime @default(now())
 
   @@unique([usuarioId, videoId])
+  @@index([videoId])
+  @@index([criadoEm])
+  @@index([usuarioId, criadoEm]) // Para afinidade por usuário
 }
 
 model Processamento {

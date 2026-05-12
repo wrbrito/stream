@@ -11,6 +11,11 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 const daysSince = (date: Date) => (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
 
+const normalizarPaginacao = (pagina: number, limite: number) => ({
+  pagina: Math.max(1, Number.isFinite(pagina) ? Math.floor(pagina) : 1),
+  limite: Math.min(50, Math.max(1, Number.isFinite(limite) ? Math.floor(limite) : 10)),
+});
+
 const hybridScore = (args: {
   tagsScore: number;
   categoriaScore: number;
@@ -34,6 +39,7 @@ export const RecommendationService = {
    * Obtém vídeos recomendados personalizados para um usuário.
    */
   getRecommendedVideos: async (userId: number, pagina: number = 1, limite: number = 10) => {
+    ({ pagina, limite } = normalizarPaginacao(pagina, limite));
     const cacheKey = `recommended_${userId}_${pagina}_${limite}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;
@@ -117,13 +123,14 @@ export const RecommendationService = {
    * Obtém vídeos relacionados a um vídeo específico.
    */
   getRelatedVideos: async (videoId: number, pagina: number = 1, limite: number = 10) => {
+    ({ pagina, limite } = normalizarPaginacao(pagina, limite));
     const cacheKey = `related_${videoId}_${pagina}_${limite}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
     // 1. Pegar detalhes do vídeo base (categoria + tags)
     const currentVideo = await RecommendationRepository.buscarVideoBase(videoId);
-    if (!currentVideo) return { videos: [], total: 0 };
+    if (!currentVideo) return { videos: [], total: 0, pagina, limite };
 
     const tagIds = currentVideo.tags.map((t: { id: number }) => t.id);
 
@@ -160,7 +167,13 @@ export const RecommendationService = {
         interesseUsuarioScore,
       });
 
-      return { ...video, recommendationScore };
+      return { ...video, recommendationScore, scoreBreakdown: {
+        tagsScore,
+        categoriaScore,
+        popularidadeScore,
+        recenciaScore,
+        interesseUsuarioScore,
+      }};
     });
 
     const sorted = scored.sort((a: any, b: any) => b.recommendationScore - a.recommendationScore);
@@ -182,11 +195,37 @@ export const RecommendationService = {
    * Obtém vídeos em alta.
    */
   getTrendingVideos: async (pagina: number = 1, limite: number = 10) => {
+    ({ pagina, limite } = normalizarPaginacao(pagina, limite));
     const cacheKey = `trending_${pagina}_${limite}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
-    const trending = await RecommendationRepository.buscarTrending(50);
+    const candidatos = await RecommendationRepository.buscarTrending(100);
+
+    const trending = candidatos
+      .map((video: any) => {
+        const viewsScore = normalize01(video.recentViewsCount || video.viewsCount || 0, 0, 500);
+        const likesScore = normalize01(video.likesCount || 0, 0, 200);
+        const popularidadeScore = clamp01(0.75 * viewsScore + 0.25 * likesScore);
+
+        const d = daysSince(video.criadoEm);
+        const recenciaScore = clamp01(1 - d / 30);
+
+        const retentionScore = clamp01(normalize01(video.tempoAssistidoMedio || 0, 0, 300));
+        const trendingScore = clamp01(0.65 * popularidadeScore + 0.25 * recenciaScore + 0.10 * retentionScore);
+
+        return {
+          ...video,
+          trendingScore,
+          recommendationScore: trendingScore,
+          scoreBreakdown: {
+            popularidadeScore,
+            recenciaScore,
+            tempoAssistidoScore: retentionScore,
+          },
+        };
+      })
+      .sort((a: any, b: any) => b.trendingScore - a.trendingScore);
     
     const start = (pagina - 1) * limite;
     const result = {

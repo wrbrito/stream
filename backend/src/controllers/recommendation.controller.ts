@@ -13,9 +13,9 @@ export const RecommendationController = {
       }
 
       const result = await RecommendationService.getRecommendedVideos(userId, pagina, limite);
-      return res.json(result);
+      return res.json({ sucesso: true, dados: result });
     } catch (error: any) {
-      return res.status(500).json({ mensagem: 'Erro ao buscar recomendações', erro: error.message });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro ao buscar recomendações', erro: error.message });
     }
   },
 
@@ -27,13 +27,13 @@ export const RecommendationController = {
       const limite = parseInt(req.query.limite as string) || 10;
 
       if (isNaN(videoId)) {
-        return res.status(400).json({ mensagem: 'ID do vídeo inválido' });
+        return res.status(400).json({ sucesso: false, mensagem: 'ID do vídeo inválido' });
       }
 
       const result = await RecommendationService.getRelatedVideos(videoId, pagina, limite);
-      return res.json(result);
+      return res.json({ sucesso: true, dados: result });
     } catch (error: any) {
-      return res.status(500).json({ mensagem: 'Erro ao buscar vídeos relacionados', erro: error.message });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro ao buscar vídeos relacionados', erro: error.message });
     }
   },
 
@@ -43,9 +43,9 @@ export const RecommendationController = {
       const limite = parseInt(req.query.limite as string) || 10;
 
       const result = await RecommendationService.getTrendingVideos(pagina, limite);
-      return res.json(result);
+      return res.json({ sucesso: true, dados: result });
     } catch (error: any) {
-      return res.status(500).json({ mensagem: 'Erro ao buscar vídeos em alta', erro: error.message });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro ao buscar vídeos em alta', erro: error.message });
     }
   }
 };

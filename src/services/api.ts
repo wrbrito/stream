@@ -216,9 +216,10 @@ export const api = {
       return api.fetch(`/videos/${id}`);
     },
 
-    registrarVisualizacao: async (id: number) => {
+    registrarVisualizacao: async (id: number, tempoAssistido: number = 0) => {
       return api.fetch(`/videos/${id}/visualizacoes`, {
         method: 'POST',
+        body: JSON.stringify({ tempoAssistido }),
       });
     },
 

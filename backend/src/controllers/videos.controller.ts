@@ -37,7 +37,8 @@ export const VideosController = {
 
   registrarVisualizacao: async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    await VideoService.registrarVisualizacao(id, req.usuario?.id);
+    const tempoAssistido = Number((req.body as { tempoAssistido?: unknown } | undefined)?.tempoAssistido ?? 0);
+    await VideoService.registrarVisualizacao(id, req.usuario?.id, Number.isFinite(tempoAssistido) ? Math.max(0, Math.floor(tempoAssistido)) : 0);
     return res.status(201).json({ sucesso: true, dados: { mensagem: 'Visualizacao registrada' } });
   },
 

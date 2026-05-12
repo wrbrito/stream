@@ -49,11 +49,29 @@ export const VideoRepository = {
     });
   },
 
-  registrarVisualizacao: async (videoId: number, usuarioId?: number) => {
+  registrarVisualizacao: async (videoId: number, usuarioId?: number, tempoAssistido: number = 0) => {
+    if (usuarioId) {
+      const visualizacaoAtual = await prisma.visualizacao.findFirst({
+        where: { videoId, usuarioId },
+        orderBy: { data: 'desc' },
+      });
+
+      if (visualizacaoAtual) {
+        return prisma.visualizacao.update({
+          where: { id: visualizacaoAtual.id },
+          data: {
+            tempoAssistido: Math.max(visualizacaoAtual.tempoAssistido, tempoAssistido),
+            data: new Date(),
+          },
+        });
+      }
+    }
+
     return prisma.visualizacao.create({
       data: {
         videoId,
         usuarioId,
+        tempoAssistido,
       },
     });
   },

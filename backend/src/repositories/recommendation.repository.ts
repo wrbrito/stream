@@ -18,20 +18,35 @@ export const RecommendationRepository = {
    * - interesse: soma e pesos baseados em tempo assistido
    */
   buscarAfinidadeUsuario: async (userId: number) => {
-    const historico = await prisma.visualizacao.findMany({
-      where: { usuarioId: userId },
-      select: {
-        tempoAssistido: true,
-        video: {
-          select: {
-            categoriaId: true,
-            tags: { select: { id: true } },
+    const [historico, favoritos] = await Promise.all([
+      prisma.visualizacao.findMany({
+        where: { usuarioId: userId },
+        select: {
+          tempoAssistido: true,
+          video: {
+            select: {
+              categoriaId: true,
+              tags: { select: { id: true } },
+            },
           },
         },
-      },
-      orderBy: { id: 'desc' },
-      take: 500,
-    });
+        orderBy: { id: 'desc' },
+        take: 500,
+      }),
+      prisma.favorito.findMany({
+        where: { usuarioId: userId },
+        select: {
+          video: {
+            select: {
+              categoriaId: true,
+              tags: { select: { id: true } },
+            },
+          },
+        },
+        orderBy: { criadoEm: 'desc' },
+        take: 200,
+      }),
+    ]);
 
     const categorias: Record<number, number> = {};
     const tags: Record<number, number> = {};
@@ -48,6 +63,16 @@ export const RecommendationRepository = {
       for (const t of h.video.tags) {
         tags[t.id] = (tags[t.id] || 0) + 1;
         tempoAssistidoPorTagId[t.id] = (tempoAssistidoPorTagId[t.id] || 0) + (h.tempoAssistido || 0);
+      }
+    }
+
+    // Curtidas/favoritos funcionam como um sinal forte de afinidade.
+    for (const favorito of favoritos) {
+      const categoriaId = favorito.video.categoriaId;
+      categorias[categoriaId] = (categorias[categoriaId] || 0) + 3;
+
+      for (const t of favorito.video.tags) {
+        tags[t.id] = (tags[t.id] || 0) + 3;
       }
     }
 
@@ -77,7 +102,7 @@ export const RecommendationRepository = {
    * Busca candidatos para recomendação.
    *
    * Regras:
-   * - Filtra status PUBLICADO
+   * - Filtra vídeos disponíveis
    * - Se userId existir: exclui vídeos já assistidos
    *
    * Retorna agregados:
@@ -97,7 +122,7 @@ export const RecommendationRepository = {
 
     const candidatos = await prisma.video.findMany({
       where: {
-        status: 'PUBLICADO',
+        status: { in: ['ATIVO', 'PUBLICADO'] },
         ...(userId ? { id: { notIn: assistidos } } : {}),
       },
       select: {
@@ -117,7 +142,7 @@ export const RecommendationRepository = {
         _count: { select: { visualizacoes: true, favoritos: true } },
         // recência/tempo: aproximar com últimas visualizações do próprio vídeo
         visualizacoes: {
-          select: { tempoAssistido: true },
+          select: { tempoAssistido: true, data: true },
           orderBy: { data: 'desc' },
           take: 50,
         },
@@ -148,7 +173,7 @@ export const RecommendationRepository = {
     return prisma.video.findMany({
       where: {
         id: { not: videoId },
-        status: 'PUBLICADO',
+        status: { in: ['ATIVO', 'PUBLICADO'] },
         OR: [
           { categoriaId },
           ...(tagIds.length
@@ -209,12 +234,12 @@ export const RecommendationRepository = {
    * aqui garantimos janela e métricas.
    */
   buscarTrending: async (limite: number = 10, lookbackDias: number = 7) => {
-    const dataMin = new Date();
+      const dataMin = new Date();
     dataMin.setDate(dataMin.getDate() - lookbackDias);
 
     return prisma.video.findMany({
       where: {
-        status: 'PUBLICADO',
+        status: { in: ['ATIVO', 'PUBLICADO'] },
         visualizacoes: {
           some: { data: { gte: dataMin } },
         },
@@ -235,7 +260,7 @@ export const RecommendationRepository = {
         tags: { select: { id: true } },
         _count: { select: { visualizacoes: true, favoritos: true } },
         visualizacoes: {
-          select: { tempoAssistido: true },
+          select: { tempoAssistido: true, data: true },
           orderBy: { data: 'desc' },
           take: 50,
         },
@@ -246,12 +271,14 @@ export const RecommendationRepository = {
       rows.map((v) => {
         const tempoAssistidoTotal = (v.visualizacoes || []).reduce((acc, x) => acc + (x.tempoAssistido || 0), 0);
         const tempoAssistidoMedio = tempoAssistidoTotal / Math.max(1, (v.visualizacoes || []).length);
+        const recentViewsCount = (v.visualizacoes || []).filter((x) => x.data >= dataMin).length;
 
         return {
           ...v,
           tagIds: v.tags.map((t) => t.id),
           viewsCount: v._count.visualizacoes,
           likesCount: v._count.favoritos,
+          recentViewsCount,
           tempoAssistidoTotal,
           tempoAssistidoMedio,
         };
@@ -259,4 +286,3 @@ export const RecommendationRepository = {
     );
   },
 };
-

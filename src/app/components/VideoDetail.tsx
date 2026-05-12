@@ -143,21 +143,29 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
   const [statsAvaliacao, setStatsAvaliacao] = useState({ media: 0, total: 0, minhaNota: null as number | null });
   const [avaliando, setAvaliando] = useState(false);
   const visualizacoesRegistradas = useRef(new Set<number>());
+  const ultimoTempoRegistrado = useRef(0);
 
   useEffect(() => {
     let ativo = true;
+    ultimoTempoRegistrado.current = 0;
 
     async function carregarVideo() {
       try {
         setLoading(true);
         setError('');
+
         const response = await api.videos.obterPorId(videoId);
+        const dados = response.dados as ApiVideo;
+        if (!dados) {
+          throw new Error('Video nao encontrado');
+        }
+
         if (ativo) {
-          const dados = response.dados as ApiVideo;
           setVideo(dados);
           setFormTitulo(dados.titulo);
           setFormDescricao(dados.descricao);
         }
+
         // Só verificar favorito se usuário estiver logado
         if (usuario) {
           const favoritoResponse = await api.videos.verificarFavorito(videoId);
@@ -165,6 +173,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
             setIsFavorito(Boolean((favoritoResponse.dados as { favorito?: boolean } | undefined)?.favorito));
           }
         }
+
         if (!visualizacoesRegistradas.current.has(videoId)) {
           visualizacoesRegistradas.current.add(videoId);
           await api.videos.registrarVisualizacao(videoId).catch(() => null);
@@ -179,30 +188,32 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
             });
           }
         }
+
         const configResponse = await api.configuracoes.publicas().catch(() => null);
         if (ativo && configResponse?.sucesso && configResponse.dados) {
           setGlobalConfigs(configResponse.dados as Record<string, string>);
         }
 
-        // Carregar comentários e avaliações
-        const [comentariosResp, avaliacoesResp] = await Promise.all([
+        // Carregar comentários, avaliações e relacionados em paralelo, mas não falhar o vídeo se algum destes endpoints falhar.
+        const maxRelated = relatedCount ?? 4;
+        const [comentariosResp, avaliacoesResp, relatedResp] = await Promise.allSettled([
           api.comentarios.listar(videoId),
-          api.avaliacoes.obter(videoId)
+          api.avaliacoes.obter(videoId),
+          api.recommendations.related(videoId, 1, maxRelated),
         ]);
 
         if (ativo) {
-          setComentarios((comentariosResp.dados as Comentario[]) || []);
-          setStatsAvaliacao((avaliacoesResp.dados as any) || { media: 0, total: 0, minhaNota: null });
-        }
-
-        if (ativo) {
-          const categoriaId = Number(video?.categoria?.id || 0) || undefined;
-          const maxRelated = relatedCount ?? 4;
-          const relatedResponse = await api.recommendations.related(videoId, 1, maxRelated);
-          const relatedDados = relatedResponse.dados as { videos: ApiVideo[]; total?: number } | { videos: ApiVideo[] } | any;
-          const relatedLista = relatedDados?.videos ?? [];
-          setRelatedVideos(relatedLista.filter((item: ApiVideo) => item.id !== videoId));
-
+          if (comentariosResp.status === 'fulfilled') {
+            setComentarios((comentariosResp.value.dados as Comentario[]) || []);
+          }
+          if (avaliacoesResp.status === 'fulfilled') {
+            setStatsAvaliacao((avaliacoesResp.value.dados as any) || { media: 0, total: 0, minhaNota: null });
+          }
+          if (relatedResp.status === 'fulfilled') {
+            const relatedDados = relatedResp.value.dados as { videos: ApiVideo[]; total?: number } | { videos: ApiVideo[] } | any;
+            const relatedLista = relatedDados?.videos ?? [];
+            setRelatedVideos(relatedLista.filter((item: ApiVideo) => item.id !== videoId));
+          }
         }
       } catch (erro) {
         if (ativo) {
@@ -220,7 +231,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
     return () => {
       ativo = false;
     };
-  }, [videoId]);
+  }, [videoId, relatedCount, usuario]);
 
   const youtubeId = useMemo(() => extrairYoutubeId(video?.urlOriginal), [video?.urlOriginal]);
   const videoSrc =
@@ -229,6 +240,16 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
       : video?.caminhoArquivo
         ? `${BASE_URL}${video.caminhoArquivo}`
         : null;
+
+  const registrarTempoAssistido = (tempoAssistido: number) => {
+    const tempoNormalizado = Math.floor(Math.max(0, tempoAssistido));
+    if (tempoNormalizado < 5 || tempoNormalizado <= ultimoTempoRegistrado.current + 4) {
+      return;
+    }
+
+    ultimoTempoRegistrado.current = tempoNormalizado;
+    api.videos.registrarVisualizacao(videoId, tempoNormalizado).catch(() => null);
+  };
 
   const handleFavoritar = async () => {
     if (!usuario) {
@@ -507,7 +528,13 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                     />
                   </div>
                 ) : videoSrc ? (
-                  <video src={videoSrc} className="w-full h-full" controls />
+                  <video
+                    src={videoSrc}
+                    className="w-full h-full"
+                    controls
+                    onPause={(event) => registrarTempoAssistido(event.currentTarget.currentTime)}
+                    onEnded={(event) => registrarTempoAssistido(event.currentTarget.currentTime)}
+                  />
                 ) : video?.tipo === 'YOUTUBE' && video?.urlOriginal ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-white bg-black">
                     <p className="mb-4 text-center px-4">

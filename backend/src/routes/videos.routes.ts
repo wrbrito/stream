@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { VideosController } from '../controllers/videos.controller.js';
-import { autenticar } from '../middlewares/auth.middleware.js';
+import { autenticar, autenticarOpcional } from '../middlewares/auth.middleware.js';
 import { permitirPerfis } from '../middlewares/roles.middleware.js';
 import { validar } from '../middlewares/validation.middleware.js';
 import { criarVideoSchema, atualizarVideoSchema, videoIdSchema } from '../schemas/video.schema.js';
@@ -16,7 +16,7 @@ videosRouter.get('/:id/favorito', autenticar, validar(videoIdSchema), VideosCont
 videosRouter.post('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.favoritar);
 videosRouter.delete('/:id/favorito', autenticar, validar(videoIdSchema), VideosController.desfavoritar);
 videosRouter.post('/:id/denunciar', autenticar, validar(videoIdSchema), VideosController.denunciar);
-videosRouter.post('/:id/visualizacoes', validar(videoIdSchema), VideosController.registrarVisualizacao);
+videosRouter.post('/:id/visualizacoes', autenticarOpcional, validar(videoIdSchema), VideosController.registrarVisualizacao);
 videosRouter.post(
   '/',
   autenticar,

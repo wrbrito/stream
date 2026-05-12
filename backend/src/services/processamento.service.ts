@@ -108,7 +108,7 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
       .videoCodec('libx264')
       .audioCodec('aac')
       .output(arquivoSaida)
-      .on('progress', (progress) => {
+      .on('progress', (progress: { percent?: number }) => {
         if (onProgress && progress.percent) {
           onProgress(Math.min(99, Math.max(0, progress.percent)));
         }
@@ -123,7 +123,7 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
 }
 function obterDuracao(arquivoVideo: string): Promise<number | null> {
   return new Promise((resolve) => {
-    ffmpeg.ffprobe(arquivoVideo, (erro, metadata) => {
+    ffmpeg.ffprobe(arquivoVideo, (erro: Error | null, metadata: { format?: { duration?: number } }) => {
       if (erro || !metadata?.format?.duration) {
         resolve(null);
         return;

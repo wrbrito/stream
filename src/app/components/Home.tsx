@@ -51,6 +51,7 @@ interface ApiVideo {
     nome?: string;
   };
   visualizacoes?: unknown[] | number;
+  viewsCount?: number;
 }
 
 interface VideosListPayload {
@@ -91,7 +92,7 @@ function extrairYoutubeId(url?: string | null): string | null {
 function normalizarVideo(video: ApiVideo): Video {
   const visualizacoes = Array.isArray(video.visualizacoes)
     ? video.visualizacoes.length
-    : Number(video.visualizacoes ?? 0);
+    : Number(video.visualizacoes ?? video.viewsCount ?? 0);
   const youtubeId = extrairYoutubeId(video.urlOriginal);
 
   return {
@@ -119,6 +120,8 @@ function normalizarVideo(video: ApiVideo): Video {
 export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories, featuredCount = 4 }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [destaques, setDestaques] = useState<Video[]>([]);
+  const [recomendados, setRecomendados] = useState<Video[]>([]);
+  const [emAlta, setEmAlta] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -166,18 +169,35 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
       setTotalVideos(total);
       setTotalPaginas(Math.ceil(total / limite));
 
-      // Buscar destaques (populares) separadamente apenas quando não houver busca/categoria ativa
+      // Buscar trilhos de recomendação apenas quando não houver busca/categoria ativa.
       if (shouldShowDestaques) {
-        try {
-          const respDestaques = await api.videos.listar(1, featuredCount, undefined, undefined, 'populares');
-          const dadosDestaques = respDestaques.dados as VideosListPayload | ApiVideo[] | undefined;
+        const [respDestaques, respTrending, respRecommended] = await Promise.allSettled([
+          api.videos.listar(1, featuredCount, undefined, undefined, 'populares'),
+          api.recommendations.trending(1, featuredCount),
+          usuario ? api.recommendations.recommended(1, featuredCount) : Promise.resolve(null),
+        ]);
+
+        if (respDestaques.status === 'fulfilled') {
+          const dadosDestaques = respDestaques.value.dados as VideosListPayload | ApiVideo[] | undefined;
           const listaDestaques = Array.isArray(dadosDestaques) ? dadosDestaques : dadosDestaques?.videos ?? [];
           setDestaques(listaDestaques.map(normalizarVideo));
-        } catch (err) {
-          console.error('Erro ao buscar destaques:', err);
+        }
+
+        if (respTrending.status === 'fulfilled') {
+          const dadosTrending = respTrending.value.dados as VideosListPayload | undefined;
+          setEmAlta((dadosTrending?.videos ?? []).map(normalizarVideo));
+        }
+
+        if (respRecommended.status === 'fulfilled' && respRecommended.value) {
+          const dadosRecommended = respRecommended.value.dados as VideosListPayload | undefined;
+          setRecomendados((dadosRecommended?.videos ?? []).map(normalizarVideo));
+        } else {
+          setRecomendados([]);
         }
       } else {
         setDestaques([]);
+        setRecomendados([]);
+        setEmAlta([]);
       }
 
       setVideos(videosApi);
@@ -211,7 +231,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
         window.clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchQuery, selectedCategoryId, pagina]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedCategoryId, pagina, usuario]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resetar página ao filtrar
   useEffect(() => {
@@ -305,6 +325,53 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
           </section>
         ) : (
           <>
+            {recomendados.length > 0 && (
+              <section className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2>Vídeos recomendados</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {recomendados.map((video) => (
+                    <VideoCard
+                      key={`recomendado-${video.id}`}
+                      title={video.titulo}
+                      category={video.categoria.nome}
+                      author={video.autor}
+                      views={video.visualizacoes}
+                      type={video.tipo}
+                      thumbnail={video.thumbnail}
+                      onClick={() => onVideoClick(video.id)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {emAlta.length > 0 && (
+              <section className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2>Em alta</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {emAlta.map((video) => (
+                    <button
+                      key={`em-alta-${video.id}`}
+                      onClick={() => onVideoClick(video.id)}
+                      className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-3 hover:border-primary hover:shadow-md transition-all"
+                    >
+                      <div className="w-20 h-14 rounded-xl overflow-hidden bg-muted">
+                        <img src={video.thumbnail} alt={video.titulo} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-sm text-foreground line-clamp-2">{video.titulo}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{video.visualizacoes} visualizações</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h2>Vídeos em Destaque</h2>
