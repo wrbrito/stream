@@ -315,7 +315,7 @@ function AppContent() {
           />
         )}
         {currentScreen === 'video' && selectedVideoId && (
-          <VideoDetail onBack={handleBackToHome} videoId={selectedVideoId} />
+          <VideoDetail onBack={handleBackToHome} videoId={selectedVideoId} onVideoClick={handleVideoClick} />
         )}
         {currentScreen === 'upload' && <UploadVideo onBack={handleBackToHome} />}
         {currentScreen === 'admin' && (

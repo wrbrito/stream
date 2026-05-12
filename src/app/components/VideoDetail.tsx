@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 interface VideoDetailProps {
   onBack: () => void;
   videoId: number;
+  onVideoClick?: (videoId: number) => void;
 }
 
 interface ApiVideo {
@@ -96,7 +97,7 @@ const getBaseUrl = (): string => {
 
 const BASE_URL = getBaseUrl();
 
-export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
+export function VideoDetail({ onBack, videoId, onVideoClick }: VideoDetailProps) {
   const { usuario } = useAuth();
   const [video, setVideo] = useState<ApiVideo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -804,18 +805,28 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                 <h3 className="font-medium text-foreground mb-3">Vídeos Relacionados</h3>
                 {relatedVideos.length > 0 ? (
                   <div className="space-y-3">
-                    {relatedVideos.map((relatedVideo) => (
+                    {relatedVideos.map((relatedVideo) => {
+                      // Extrair apenas o nome do arquivo se for um caminho completo
+                      const miniaturaPath = relatedVideo.miniatura?.includes('/') 
+                        ? relatedVideo.miniatura.split('/').pop() 
+                        : relatedVideo.miniatura;
+                      
+                      return (
                       <div
                         key={relatedVideo.id}
                         className="group cursor-pointer border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors"
-                        onClick={() => window.location.href = `/video/${relatedVideo.id}`}
+                        onClick={() => onVideoClick ? onVideoClick(relatedVideo.id) : window.location.href = `?videoId=${relatedVideo.id}`}
                       >
                         <div className="aspect-video bg-muted relative">
-                          {relatedVideo.miniatura ? (
+                          {relatedVideo.miniatura && miniaturaPath ? (
                             <img
-                              src={`${BASE_URL}/uploads/thumbnails/${relatedVideo.miniatura}`}
+                              src={`${BASE_URL}/uploads/thumbnails/${miniaturaPath}`}
                               alt={relatedVideo.titulo}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Fallback se a imagem não carregar
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-muted">
@@ -839,7 +850,8 @@ export function VideoDetail({ onBack, videoId }: VideoDetailProps) {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
