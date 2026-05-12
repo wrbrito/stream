@@ -2,6 +2,7 @@
 
 - [x] Step 1: Criar tipos/DTOs em `backend/src/types/recommendation.types.ts`
 
+
 - [ ] Step 2: Refatorar `RecommendationRepository` para devolver dados agregados e evitar N+1
 - [ ] Step 3: Implementar score híbrido fiel + ranking + paginação em `RecommendationService`
 - [ ] Step 4: Atualizar `VideoDetail.tsx` para consumir `GET /api/recommendations/related/:videoId`
