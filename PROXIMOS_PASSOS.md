@@ -114,27 +114,27 @@
 ### 🔥 ALTA PRIORIDADE (Conclusão essencial)
 - [x] **Finalizar integração Frontend-Backend** ✅ COMPLETO
 - [ ] Testar fluxo completo login → upload → visualização
-- [ ] Implementar sistema de comentários com respostas
-- [ ] Criar perfil do usuário completo
+- [x] Implementar sistema de comentários com respostas ✅ COMPLETO
+- [x] Criar perfil do usuário completo ✅ COMPLETO
 
 ### 🎯 MÉDIA PRIORIDADE (Melhorias importantes)
-4. **Sistema de configurações globais**
-   - Admin pode definir logo, nome do site, marca d'água
-   - Frontend consome essas configurações dinamicamente
+4. **Sistema de configurações globais** ✅ COMPLETO
+   - [x] Admin pode definir logo, nome do site, marca d'água
+   - [x] Frontend consome essas configurações dinamicamente
 
-5. **Admin panel comentários**
-   - Aba separada para moderar comentários
-   - Edição/exclusão por parte do admin
+5. **Admin panel comentários** ✅ COMPLETO
+   - [x] Aba separada para moderar comentários
+   - [x] Edição/exclusão por parte do admin
 
 ### 🔮 BAIXA PRIORIDADE (Otimizações futuras)
-6. **Sistema de recomendação completo**
-   - Implementar embeddings/IA (quando pronto)
-   - A/B testing de algoritmos
+6. **Sistema de recomendação completo** 🔄 PARCIAL (90%)
+   - [ ] Implementar embeddings/IA (quando pronto)
+   - [ ] A/B testing de algoritmos
 
 7. **Otimizações de performance**
-   - Redis para cache distribuído
-   - PostgreSQL em produção
-   - Rate limiting
+   - [ ] Redis para cache distribuído
+   - [ ] PostgreSQL em produção
+   - [ ] Rate limiting
 
 ---
 
