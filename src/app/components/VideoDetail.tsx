@@ -532,6 +532,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                     src={videoSrc}
                     className="w-full h-full"
                     controls
+                    poster={obterThumbnailUrl(video) || undefined}
                     onPause={(event) => registrarTempoAssistido(event.currentTarget.currentTime)}
                     onEnded={(event) => registrarTempoAssistido(event.currentTarget.currentTime)}
                   />

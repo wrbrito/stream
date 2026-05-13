@@ -757,7 +757,17 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     id="thumbnail-edit"
                   />
                   <label htmlFor="thumbnail-edit" className="cursor-pointer">
-                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    {editingVideoData.miniaturaFile ? (
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border mb-2">
+                        <img 
+                          src={URL.createObjectURL(editingVideoData.miniaturaFile)} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {editingVideoData.miniaturaFile ? editingVideoData.miniaturaFile.name : 'Clique para selecionar uma miniatura'}
                     </p>

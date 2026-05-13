@@ -73,7 +73,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
     }
 
     if (uploadType === 'file' && !selectedFile) {
-      setUploadError('Selecione um arquivo de vídeo');
+      setUploadError('Selecione um arquivo de vídeo ou áudio');
       return;
     }
 
@@ -116,9 +116,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
       setUploadSuccess(true);
       setTimeout(() => onBack(), 2000);
     } catch (error) {
-      setUploadError(tratarErroApi(error));
-      setUploadError('Erro ao enviar vídeo. Tente novamente.');
-      setUploadError(tratarErroApi(error));
+      setUploadError('Erro ao enviar. Tente novamente.');
       console.error('Upload error:', error);
     } finally {
       setUploading(false);
@@ -140,10 +138,10 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
         <div className="max-w-3xl mx-auto">
           <div className="bg-card rounded-xl border border-border shadow-lg p-8">
             <h1 className="text-2xl font-semibold text-foreground mb-2">
-              Enviar Novo Vídeo
+              Enviar Novo Conteúdo
             </h1>
             <p className="text-muted-foreground mb-6">
-              Compartilhe conteúdo educacional com a comunidade escolar
+              Compartilhe vídeos ou áudios com a comunidade escolar
             </p>
 
             <div className="flex gap-3 mb-8">
@@ -175,12 +173,12 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
               {uploadType === 'file' ? (
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Arquivo de Vídeo
+                    Arquivo de Vídeo ou Áudio
                   </label>
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
                     <input
                       type="file"
-                      accept="video/*"
+                      accept="video/*,audio/*"
                       onChange={(e) =>
                         setSelectedFile(e.target.files?.[0] || null)
                       }
@@ -202,7 +200,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
                             Clique para selecionar ou arraste o arquivo
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            MP4, MOV, AVI (máx. 500MB)
+                            Vídeos (MP4, MOV) ou Áudio (MP3)
                           </p>
                         </>
                       )}
@@ -243,7 +241,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
               )}
 
               <Input
-                label="Título do Vídeo"
+                label="Título"
                 placeholder="Ex: Introdução à Matemática Aplicada - Aula 01"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -255,7 +253,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
                   Descrição
                 </label>
                 <textarea
-                  placeholder="Descreva o conteúdo do vídeo..."
+                  placeholder="Descreva o conteúdo..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
@@ -308,20 +306,35 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
                     htmlFor="thumbnail"
                     className="cursor-pointer flex flex-col items-center"
                   >
-                    <Image className="w-10 h-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Clique para adicionar uma miniatura personalizada
-                    </p>
+                    {thumbnailFile ? (
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border">
+                        <img 
+                          src={URL.createObjectURL(thumbnailFile)} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <p className="text-white text-xs font-medium">Trocar imagem</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Image className="w-10 h-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Clique para adicionar uma miniatura personalizada
+                        </p>
+                      </>
+                    )}
                   </label>
                 </div>
               </div>
 
-{uploadSuccess ? (
+              {uploadSuccess ? (
                 <div className="flex flex-col items-center gap-4 pt-4">
                   <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center">
                     <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Vídeo enviado com sucesso!</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Conteúdo enviado com sucesso!</h3>
                   <p className="text-muted-foreground">Redirecionando em 2 segundos...</p>
                 </div>
               ) : (
@@ -333,7 +346,7 @@ export function UploadVideo({ onBack }: UploadVideoProps) {
                         Enviando...
                       </>
                     ) : (
-                      'Enviar Vídeo'
+                      'Enviar Conteúdo'
                     )}
                   </Button>
                   <Button
