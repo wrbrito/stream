@@ -22,7 +22,6 @@ async function garantirDiretorio(destino: string) {
 async function baixarYoutube(url: string, arquivoDestino: string, qualidade: string = 'best', onProgress?: (percentual: number) => void) {
   await garantirDiretorio(arquivoDestino);
 
-  // Mapeamento de qualidades comuns para formato youtube-dl, priorizando mp4 e m4a para garantir áudio
   let formatString = qualidade;
   if (qualidade === '1080p') formatString = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best';
   else if (qualidade === '720p') formatString = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best';
@@ -31,7 +30,6 @@ async function baixarYoutube(url: string, arquivoDestino: string, qualidade: str
   else if (qualidade === 'maxima') formatString = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
 
   try {
-    // Usamos spawn para poder capturar o progresso via stdout
     const subprocess = youtubedl.exec(url, {
       output: arquivoDestino,
       format: formatString,
@@ -41,13 +39,12 @@ async function baixarYoutube(url: string, arquivoDestino: string, qualidade: str
       noWarnings: true,
       preferFreeFormats: true,
       addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'],
-      newline: true, // Garante que cada atualização de progresso venha em uma nova linha
+      newline: true,
     });
 
     if (onProgress && subprocess.stdout) {
       subprocess.stdout.on('data', (data) => {
         const output = data.toString();
-        // Procura por padrões como "[download]  10.5% of 100.00MiB"
         const match = output.match(/\[download\]\s+(\d+\.?\d*)%/);
         if (match) {
           const percent = parseFloat(match[1]);
@@ -80,33 +77,76 @@ function obterPosicaoMarcaDagua(posicao: PosicaoMarcaDagua) {
   return { x: 10, y: 'h-th-10' };
 }
 
+async function analisarMidia(arquivo: string): Promise<{ temVideo: boolean; temAudio: boolean; duracao: number | null; isAudioOnly: boolean }> {
+  return new Promise((resolve) => {
+    ffmpeg.ffprobe(arquivo, (err, metadata) => {
+      if (err || !metadata) {
+        resolve({ temVideo: false, temAudio: false, duracao: null, isAudioOnly: false });
+        return;
+      }
+      // Consideramos apenas vídeos reais (não capas de áudio)
+      // Capas de MP3 geralmente são mjpeg e não têm framerate normal
+      const videoStream = metadata.streams.find(s => s.codec_type === 'video');
+      const audioStream = metadata.streams.find(s => s.codec_type === 'audio');
+      
+      const temVideoReal = videoStream && videoStream.codec_name !== 'mjpeg';
+      const temAudio = !!audioStream;
+      const duracao = metadata.format.duration ?? null;
+      
+      resolve({ 
+          temVideo: !!videoStream, 
+          temAudio, 
+          duracao,
+          isAudioOnly: !temVideoReal && temAudio
+      });
+    });
+  });
+}
+
 async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, posicaoMarcaDagua?: PosicaoMarcaDagua, onProgress?: (percentual: number) => void) {
   await garantirDiretorio(arquivoSaida);
   
+  const midia = await analisarMidia(arquivoOriginal);
   const textoMarcaDagua = await ConfiguracaoService.obter('WATERMARK_TEXT', env.WATERMARK_TEXT);
   const posicao = obterPosicaoMarcaDagua(posicaoMarcaDagua || 'BOTTOM_LEFT');
 
   return new Promise<void>((resolve, reject) => {
     const comando = ffmpeg(arquivoOriginal);
-    if (textoMarcaDagua && textoMarcaDagua.trim()) {
-      comando.videoFilters({
-        filter: 'drawtext',
-        options: {
-          text: textoMarcaDagua,
-          fontcolor: 'white',
-          fontsize: 24,
-          box: 1,
-          boxcolor: 'black@0.5',
-          boxborderw: 5,
-          x: posicao.x,
-          y: posicao.y,
+    
+    if (midia.isAudioOnly) {
+        // Se for apenas áudio (ou MP3 com capa mjpeg), ignoramos o vídeo/capa 
+        // para evitar erros de muxing e framerate no MP4.
+        comando.noVideo().audioCodec('aac').audioBitrate('128k');
+    } else {
+        // Processamento normal de vídeo
+        if (midia.temVideo && textoMarcaDagua && textoMarcaDagua.trim()) {
+            const isWindows = process.platform === 'win32';
+            const fontPath = isWindows ? 'C\\:/Windows/Fonts/arial.ttf' : undefined;
+
+            comando.videoFilters({
+                filter: 'drawtext',
+                options: {
+                    text: textoMarcaDagua,
+                    fontcolor: 'white',
+                    fontsize: 24,
+                    box: 1,
+                    boxcolor: 'black@0.5',
+                    boxborderw: 5,
+                    x: posicao.x,
+                    y: posicao.y,
+                    ...(fontPath ? { fontfile: fontPath } : {})
+                }
+            });
         }
-      });
+
+        comando
+            .videoCodec('libx264')
+            .outputOptions(['-pix_fmt yuv420p', '-preset fast', '-crf 23'])
+            .audioCodec('aac')
+            .audioBitrate('128k');
     }
 
     comando
-      .videoCodec('libx264')
-      .audioCodec('aac')
       .output(arquivoSaida)
       .on('progress', (progress: { percent?: number }) => {
         if (onProgress && progress.percent) {
@@ -117,19 +157,12 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
         if (onProgress) onProgress(100);
         resolve();
       })
-      .on('error', reject)
+      .on('error', (err, stdout, stderr) => {
+        console.error('Erro FFmpeg aplicarMarcaDagua:', err.message);
+        if (stderr) console.error('FFmpeg stderr:', stderr);
+        reject(new Error(`Falha no processamento: ${err.message}`));
+      })
       .run();
-  });
-}
-function obterDuracao(arquivoVideo: string): Promise<number | null> {
-  return new Promise((resolve) => {
-    ffmpeg.ffprobe(arquivoVideo, (erro: Error | null, metadata: { format?: { duration?: number } }) => {
-      if (erro || !metadata?.format?.duration) {
-        resolve(null);
-        return;
-      }
-      resolve(metadata.format.duration);
-    });
   });
 }
 
@@ -142,9 +175,11 @@ function formatarTimestamp(segundos: number): string {
 
 async function gerarMiniatura(arquivoVideo: string, diretorioMiniaturas: string, nomeArquivo: string) {
   await garantirDiretorio(path.join(diretorioMiniaturas, 'dummy.txt'));
+  const midia = await analisarMidia(arquivoVideo);
+  
+  if (midia.isAudioOnly) return null;
 
-  const duracao = await obterDuracao(arquivoVideo);
-  const timestamp = duracao ? formatarTimestamp(duracao / 2) : '50%';
+  const timestamp = midia.duracao ? formatarTimestamp(midia.duracao / 2) : '50%';
 
   return new Promise<string>((resolve, reject) => {
     ffmpeg(arquivoVideo)
@@ -154,7 +189,10 @@ async function gerarMiniatura(arquivoVideo: string, diretorioMiniaturas: string,
         folder: diretorioMiniaturas,
       })
       .on('end', () => resolve(`/uploads/thumbnails/thumb-${nomeArquivo}.png`))
-      .on('error', reject);
+      .on('error', (err) => {
+          console.warn('Erro ao gerar miniatura:', err.message);
+          resolve('');
+      });
   });
 }
 
@@ -177,7 +215,6 @@ export const ProcessamentoService = {
     const posicaoFinal = posicaoMarcaDagua || (await ConfiguracaoService.obter('WATERMARK_POSITION', 'BOTTOM_LEFT')) as PosicaoMarcaDagua;
 
     try {
-      // Download representa 0-50% do processo
       await baixarYoutube(url, caminhoTemp, qualidade, async (percent) => {
         const progressoGlobal = Math.round(percent / 2);
         await ProcessamentoRepository.atualizar(id, {
@@ -186,7 +223,6 @@ export const ProcessamentoService = {
         });
       });
 
-      // Verifica se o arquivo existe e ajusta o caminho caso o youtube-dl tenha mudado a extensão
       let caminhoParaProcessar = caminhoTemp;
       try {
         await fs.access(caminhoParaProcessar);
@@ -198,16 +234,15 @@ export const ProcessamentoService = {
         if (matchingFile) {
           caminhoParaProcessar = path.join(dir, matchingFile);
         } else {
-          throw new Error(`Arquivo baixado não encontrado. Tentou: ${caminhoTemp}`);
+          throw new Error(`Arquivo baixado não encontrado.`);
         }
       }
 
-      // Processamento representa 50-100% do processo
       await aplicarMarcaDagua(caminhoParaProcessar, caminhoFinal, posicaoFinal, async (percent) => {
         const progressoGlobal = 50 + Math.round(percent / 2);
         await ProcessamentoRepository.atualizar(id, {
           progresso: Math.min(99, progressoGlobal),
-          mensagem: `Aplicando marca d'água: ${percent.toFixed(1)}%`,
+          mensagem: `Processando mídia: ${percent.toFixed(1)}%`,
         });
       });
 
@@ -233,7 +268,7 @@ export const ProcessamentoService = {
       await ProcessamentoRepository.atualizar(id, {
         status: 'CONCLUIDO',
         progresso: 100,
-        mensagem: `Importação concluída com marca d’água aplicada (${posicaoFinal})`,
+        mensagem: `Importação concluída`,
         finalizadoEm: new Date(),
       });
 
@@ -242,7 +277,7 @@ export const ProcessamentoService = {
       console.error('Erro ao importar vídeo do YouTube:', erro);
       await ProcessamentoRepository.atualizar(id, {
         status: 'ERRO',
-        mensagem: `Falha na importação do vídeo: ${erro instanceof Error ? erro.message : 'erro desconhecido'}`,
+        mensagem: `Falha na importação: ${erro instanceof Error ? erro.message : 'erro desconhecido'}`,
         finalizadoEm: new Date(),
       }).catch(() => null);
       await VideoRepository.atualizar(id, { status: 'ERRO' }).catch(() => null);
@@ -259,39 +294,50 @@ export const ProcessamentoService = {
       videoId: id,
       status: 'EM_ANDAMENTO',
       progresso: 0,
-      mensagem: 'Iniciando processamento do vídeo...',
+      mensagem: 'Iniciando processamento...',
     });
 
     const posicaoFinal = posicaoMarcaDagua || (await ConfiguracaoService.obter('WATERMARK_POSITION', 'BOTTOM_LEFT')) as PosicaoMarcaDagua;
 
-    await aplicarMarcaDagua(arquivo, caminhoFinal, posicaoFinal, async (percent) => {
-      await ProcessamentoRepository.atualizar(id, {
-        progresso: Math.round(percent),
-        mensagem: `Aplicando marca d'água: ${percent.toFixed(1)}%`,
-      });
-    });
-
-    let miniatura = null;
     try {
-      const dirThumbnails = path.resolve(process.cwd(), env.UPLOAD_DIRECTORY, 'thumbnails');
-      miniatura = await gerarMiniatura(caminhoFinal, dirThumbnails, `video-${id}-${Date.now()}`);
-    } catch (e) {
-      console.error('Erro ao gerar miniatura:', e);
+        await aplicarMarcaDagua(arquivo, caminhoFinal, posicaoFinal, async (percent) => {
+            await ProcessamentoRepository.atualizar(id, {
+                progresso: Math.round(percent),
+                mensagem: `Processando mídia: ${percent.toFixed(1)}%`,
+            });
+        });
+
+        let miniatura = null;
+        try {
+            const dirThumbnails = path.resolve(process.cwd(), env.UPLOAD_DIRECTORY, 'thumbnails');
+            miniatura = await gerarMiniatura(caminhoFinal, dirThumbnails, `video-${id}-${Date.now()}`);
+        } catch (e) {
+            console.error('Erro ao gerar miniatura:', e);
+        }
+
+        await VideoRepository.atualizar(id, {
+            caminhoArquivo: `/uploads/videos/${nomeArquivo}`,
+            miniatura: miniatura || undefined,
+            status: 'ATIVO',
+        });
+
+        await ProcessamentoRepository.atualizar(id, {
+            status: 'CONCLUIDO',
+            progresso: 100,
+            mensagem: `Processamento concluído`,
+            finalizadoEm: new Date(),
+        });
+
+        return caminhoFinal;
+    } catch (erro) {
+        console.error('Erro ao processar vídeo interno:', erro);
+        await ProcessamentoRepository.atualizar(id, {
+            status: 'ERRO',
+            mensagem: `Falha no processamento: ${erro instanceof Error ? erro.message : 'erro desconhecido'}`,
+            finalizadoEm: new Date(),
+        }).catch(() => null);
+        await VideoRepository.atualizar(id, { status: 'ERRO' }).catch(() => null);
+        throw erro;
     }
-
-    await VideoRepository.atualizar(id, {
-      caminhoArquivo: `/uploads/videos/${nomeArquivo}`,
-      miniatura: miniatura || undefined,
-      status: 'ATIVO',
-    });
-
-    await ProcessamentoRepository.atualizar(id, {
-      status: 'CONCLUIDO',
-      progresso: 100,
-      mensagem: `Vídeo interno processado com marca d’água (${posicaoFinal})`,
-      finalizadoEm: new Date(),
-    });
-
-    return caminhoFinal;
   },
 };

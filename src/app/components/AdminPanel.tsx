@@ -13,6 +13,7 @@ import {
   Loader,
   Settings,
   Trash2,
+  Upload,
   Users,
   Video,
   XCircle,
@@ -362,13 +363,13 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   const handleStartEditVideo = (video: AdminVideo) => {
     setEditingVideoId(video.id);
     setEditingVideoData({
-      titulo: video.titulo,
-      descricao: video.descricao ?? '',
-      autor: video.autor,
-      categoriaId: video.categoria?.id ?? categorias[0]?.id ?? null,
-      status: video.status,
-      tipo: video.tipo,
-      urlOriginal: video.urlOriginal ?? '',
+      titulo: video.titulo || '',
+      descricao: video.descricao || '',
+      autor: video.autor || '',
+      categoriaId: video.categoria?.id || (categorias.length > 0 ? categorias[0].id : null),
+      status: video.status || 'PENDENTE',
+      tipo: video.tipo || 'INTERNO',
+      urlOriginal: video.urlOriginal || '',
       miniaturaFile: undefined,
     });
   };
@@ -516,13 +517,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
   }, []);
 
   const videosFiltrados = useMemo(() => {
-    const termo = (searchQuery ?? busca).toLowerCase();
-    return videos.filter((video) => {
+    const termo = (searchQuery || busca || '').toLowerCase();
+    return (videos || []).filter((video) => {
+      if (!video) return false;
       const buscaOk =
         !termo ||
-        video.titulo.toLowerCase().includes(termo) ||
-        video.autor.toLowerCase().includes(termo) ||
-        video.categoria?.nome?.toLowerCase().includes(termo);
+        (video.titulo || '').toLowerCase().includes(termo) ||
+        (video.autor || '').toLowerCase().includes(termo) ||
+        (video.categoria?.nome || '').toLowerCase().includes(termo);
       const statusOk = !status || video.status === status;
       const tipoOk = !tipo || video.tipo === tipo;
       return buscaOk && statusOk && tipoOk;
@@ -1489,62 +1491,122 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <Settings className="w-5 h-5 text-primary" />
-            Configurações de Página
+            Configurações de Página e Recomendações
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Controle a visibilidade de categorias e rodapé, além de configurar informações de contato.
+            Controle a visibilidade de categorias, rodapé, informações de contato e o sistema de recomendações.
           </p>
 
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={localShowCategories}
-                  onChange={(e) => setLocalShowCategories(e.target.checked)}
-                  className="w-5 h-5 rounded border-border cursor-pointer"
-                />
-                <span className="text-sm font-medium text-foreground">Exibir categorias na página inicial</span>
-              </label>
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-foreground border-b border-border pb-2">Layout e Exibição</h4>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localShowCategories}
+                    onChange={(e) => setLocalShowCategories(e.target.checked)}
+                    className="w-5 h-5 rounded border-border cursor-pointer"
+                  />
+                  <span className="text-sm font-medium text-foreground">Exibir categorias na página inicial</span>
+                </label>
 
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={localShowFooter}
-                  onChange={(e) => setLocalShowFooter(e.target.checked)}
-                  className="w-5 h-5 rounded border-border cursor-pointer"
-                />
-                <span className="text-sm font-medium text-foreground">Exibir rodapé</span>
-              </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localShowFooter}
+                    onChange={(e) => setLocalShowFooter(e.target.checked)}
+                    className="w-5 h-5 rounded border-border cursor-pointer"
+                  />
+                  <span className="text-sm font-medium text-foreground">Exibir rodapé</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos em destaque</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={localFeaturedCount}
+                    onChange={(e) => setLocalFeaturedCount(Number(e.target.value) || 0)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="4"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos relacionados</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={localRelatedCount}
+                    onChange={(e) => setLocalRelatedCount(Number(e.target.value) || 0)}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="4"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos em destaque</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={localFeaturedCount}
-                  onChange={(e) => setLocalFeaturedCount(Number(e.target.value) || 0)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="4"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos relacionados</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={localRelatedCount}
-                  onChange={(e) => setLocalRelatedCount(Number(e.target.value) || 0)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="4"
-                />
+            <div className="space-y-4 border-t border-border pt-4">
+              <h4 className="text-sm font-medium text-foreground border-b border-border pb-2">Sistema de Recomendações</h4>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h5 className="text-sm font-medium text-foreground">Ativar Vídeos Recomendados</h5>
+                    <p className="text-xs text-muted-foreground">Vídeos personalizados para o usuário</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={localAtivarRecomendados}
+                    onChange={(e) => setLocalAtivarRecomendados(e.target.checked)}
+                    className="w-5 h-5 rounded border-border cursor-pointer"
+                  />
+                </div>
+
+                {localAtivarRecomendados && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de recomendados</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={localQtdVideosRecomendados}
+                      onChange={(e) => setLocalQtdVideosRecomendados(Number(e.target.value) || 10)}
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <h5 className="text-sm font-medium text-foreground">Ativar Vídeos em Alta</h5>
+                    <p className="text-xs text-muted-foreground">Vídeos mais populares da plataforma</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={localAtivarEmAlta}
+                    onChange={(e) => setLocalAtivarEmAlta(e.target.checked)}
+                    className="w-5 h-5 rounded border-border cursor-pointer"
+                  />
+                </div>
+
+                {localAtivarEmAlta && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos em alta</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={localQtdVideosEmAlta}
+                      onChange={(e) => setLocalQtdVideosEmAlta(Number(e.target.value) || 10)}
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="border-t border-border pt-4 mt-4">
-              <h4 className="text-sm font-medium mb-4 text-foreground">Informações de Contato</h4>
+            <div className="space-y-4 border-t border-border pt-4">
+              <h4 className="text-sm font-medium text-foreground border-b border-border pb-2">Informações de Contato</h4>
               
               <div>
                 <label className="block text-sm font-medium mb-2 text-foreground">Email de Suporte</label>
@@ -1557,7 +1619,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">Gestor - Nome</label>
                   <input
@@ -1565,7 +1627,6 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     value={localFooterGestor}
                     onChange={(e) => setLocalFooterGestor(e.target.value)}
                     className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Ex: Alberto Brasileiro"
                   />
                 </div>
                 <div>
@@ -1575,12 +1636,11 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     value={localFooterGestorEmail}
                     onChange={(e) => setLocalFooterGestorEmail(e.target.value)}
                     className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="alberto@seusite.com.br"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">Desenvolvedor - Nome</label>
                   <input
@@ -1588,7 +1648,6 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     value={localFooterAutor}
                     onChange={(e) => setLocalFooterAutor(e.target.value)}
                     className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Ex: William Ramos de Brito"
                   />
                 </div>
                 <div>
@@ -1598,95 +1657,14 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
                     value={localFooterAutorEmail}
                     onChange={(e) => setLocalFooterAutorEmail(e.target.value)}
                     className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="william@seusite.com.br"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 flex justify-end">
-              <Button type="submit" disabled={isSavingConfigs}>
-                {isSavingConfigs ? 'Salvando...' : 'Salvar alterações'}
-              </Button>
-            </div>
-          </form>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" />
-            Configurações de Recomendação
-          </h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            Controle a exibição das seções de vídeos recomendados e em alta, além da quantidade de vídeos exibidos em cada uma.
-          </p>
-
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-foreground">Ativar Vídeos Recomendados</h4>
-                  <p className="text-sm text-muted-foreground">Exibir seção de vídeos recomendados personalizados para o usuário</p>
-                </div>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localAtivarRecomendados}
-                    onChange={(e) => setLocalAtivarRecomendados(e.target.checked)}
-                    className="w-5 h-5 rounded border-border cursor-pointer"
-                  />
-                </label>
-              </div>
-
-              {localAtivarRecomendados && (
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos recomendados</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={localQtdVideosRecomendados}
-                    onChange={(e) => setLocalQtdVideosRecomendados(Number(e.target.value) || 10)}
-                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="10"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-border pt-4 mt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-foreground">Ativar Vídeos em Alta</h4>
-                  <p className="text-sm text-muted-foreground">Exibir seção de vídeos mais populares e em tendência</p>
-                </div>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localAtivarEmAlta}
-                    onChange={(e) => setLocalAtivarEmAlta(e.target.checked)}
-                    className="w-5 h-5 rounded border-border cursor-pointer"
-                  />
-                </label>
-              </div>
-
-              {localAtivarEmAlta && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium mb-2 text-foreground">Quantidade de vídeos em alta</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={localQtdVideosEmAlta}
-                    onChange={(e) => setLocalQtdVideosEmAlta(Number(e.target.value) || 10)}
-                    className="w-full px-4 py-2 rounded-lg border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="10"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 flex justify-end">
-              <Button type="submit" disabled={isSavingConfigs}>
-                {isSavingConfigs ? 'Salvando...' : 'Salvar alterações'}
+            <div className="pt-6 flex justify-end">
+              <Button type="submit" disabled={isSavingConfigs} className="w-full md:w-auto">
+                {isSavingConfigs ? 'Salvando...' : 'Salvar todas as alterações'}
               </Button>
             </div>
           </form>
@@ -1695,7 +1673,52 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     );
   }
 
+  function DashboardView() {
+    return (
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard label="Total de videos" value={dashboard?.total ?? videos.length} helper={`${dashboard?.internos ?? 0} internos, ${dashboard?.externos ?? 0} YouTube`} icon={Video} />
+          <StatCard label="Visualizacoes" value={totalVisualizacoes} helper="Contador real registrado ao abrir videos" icon={BarChart3} />
+          <StatCard label="Pendentes" value={dashboard?.pendentes ?? 0} helper="Aguardando revisao/publicacao" icon={AlertCircle} />
+          <StatCard label="Usuarios" value={dashboard?.totalUsuarios ?? usuarios.length} helper={`${dashboard?.totalCategorias ?? categorias.length} categorias cadastradas`} icon={Users} />
+        </div>
+
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center">
+            <h3 className="font-semibold text-foreground">Videos Recentes</h3>
+            <Button variant="ghost" size="sm" onClick={() => setActiveMenu('videos')}>Ver todos</Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-muted/50 text-muted-foreground text-xs uppercase">
+                <tr>
+                  <th className="px-6 py-3 font-medium">Titulo</th>
+                  <th className="px-6 py-4 font-medium">Status</th>
+                  <th className="px-6 py-4 font-medium">Data</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {videos.slice(0, 5).map((video) => (
+                  <tr key={video.id} className="hover:bg-accent/50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-foreground">{video.titulo}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusConfig[video.status]?.color ?? 'bg-muted text-muted-foreground'}`}>
+                        {statusConfig[video.status]?.label ?? video.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">{formatarData(video.criadoEm)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function Conteudo() {
+    if (activeMenu === 'dashboard') return DashboardView();
     if (activeMenu === 'videos') return VideosTable();
     if (activeMenu === 'users') return UsuariosView();
     if (activeMenu === 'categories') return CategoriasView();
@@ -1703,17 +1726,7 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     if (activeMenu === 'reports') return ReportsView();
     if (activeMenu === 'settings') return SettingsView();
 
-    return (
-      <>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard label="Total de videos" value={dashboard?.total ?? videos.length} helper={`${dashboard?.internos ?? 0} internos, ${dashboard?.externos ?? 0} YouTube`} icon={Video} />
-          <StatCard label="Visualizacoes" value={totalVisualizacoes} helper="Contador real registrado ao abrir videos" icon={BarChart3} />
-          <StatCard label="Pendentes" value={dashboard?.pendentes ?? 0} helper="Aguardando revisao/publicacao" icon={AlertCircle} />
-          <StatCard label="Usuarios" value={dashboard?.totalUsuarios ?? usuarios.length} helper={`${dashboard?.totalCategorias ?? categorias.length} categorias cadastradas`} icon={Users} />
-        </div>
-        {VideosTable()}
-      </>
-    );
+    return DashboardView();
   }
 
   return (

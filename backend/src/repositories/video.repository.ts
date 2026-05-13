@@ -50,6 +50,18 @@ export const VideoRepository = {
   },
 
   registrarVisualizacao: async (videoId: number, usuarioId?: number, tempoAssistido: number = 0) => {
+    // Se for um novo acesso (tempoAssistido = 0), sempre cria um novo registro para incrementar o contador
+    if (tempoAssistido === 0) {
+      return prisma.visualizacao.create({
+        data: {
+          videoId,
+          usuarioId,
+          tempoAssistido: 0,
+        },
+      });
+    }
+
+    // Se for atualização de tempo assistido, tenta encontrar a visualização mais recente deste usuário/vídeo
     if (usuarioId) {
       const visualizacaoAtual = await prisma.visualizacao.findFirst({
         where: { videoId, usuarioId },
@@ -67,6 +79,7 @@ export const VideoRepository = {
       }
     }
 
+    // Caso não encontre uma visualização anterior para atualizar ou não tenha usuário, cria uma nova
     return prisma.visualizacao.create({
       data: {
         videoId,

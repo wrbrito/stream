@@ -42,7 +42,7 @@ function AppContent() {
    const showCategories = configsPublicas.EXIBIR_CATEGORIAS !== 'false';
    const gestorNome = configsPublicas.RODAPE_GESTOR_NOME || 'Alberto Brasileiro';
    const gestorEmail = configsPublicas.RODAPE_GESTOR_EMAIL || 'alberto.brasileiro@colegiodamas.com.br';
-   const escritoPor = configsPublicas.RODAPE_ESCRITO_POR || 'Escrito por: William Ramos de Brito';
+   const escritoPor = configsPublicas.RODAPE_ESCRITO_POR || 'William Ramos de Brito';
    const escritoPorEmail = configsPublicas.RODAPE_ESCRITO_POR_EMAIL || 'william.brito@colegiodamas.com.br';
   const featuredCount = Number(configsPublicas.QTD_VIDEOS_DESTAQUE ?? 4);
   const relatedCount = Number(configsPublicas.QTD_VIDEOS_RELACIONADOS ?? 4);

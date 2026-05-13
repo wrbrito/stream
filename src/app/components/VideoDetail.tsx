@@ -668,7 +668,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
 
               <div>
                 <h3 className="font-medium text-foreground mb-2">Descricao</h3>
-                <p className="text-muted-foreground leading-relaxed">{video.descricao}</p>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{video.descricao}</p>
               </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
@@ -777,7 +777,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                             </div>
                           )}
                         </div>
-                        <p className="text-sm text-foreground leading-relaxed">
+                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                           {comentario.texto}
                         </p>
                         {usuario?.id === (video.uploaderId ?? video.uploader?.id) && (
@@ -834,7 +834,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                                     </div>
                                   )}
                                 </div>
-                                <p className="text-sm text-foreground leading-relaxed mt-1">{resposta.texto}</p>
+                                <p className="text-sm text-foreground leading-relaxed mt-1 whitespace-pre-wrap">{resposta.texto}</p>
                               </div>
                             ))}
                           </div>
