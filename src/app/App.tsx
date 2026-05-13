@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Search, Sun, Moon, Upload, Bell, User, LogOut, Video, Check } from 'lucide-react';
 import { ErrorProvider } from '../contexts/ErrorContext';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { NotificationsProvider, useNotifications } from '../contexts/NotificationsContext';
+
 
 import { Login } from './components/Login';
 import { Home } from './components/Home';

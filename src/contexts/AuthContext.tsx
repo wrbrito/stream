@@ -36,6 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  const isAuthenticated = !!token && !!usuario;
+
   const login = async (email: string, senha: string, lembrar: boolean = true) => {
     try {
       setIsLoading(true);
@@ -48,6 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const logout = async () => {
+    api.clearAuth();
+    setToken(null);
+    setUsuario(null);
   };
 
   const hasRole = (role: 'ADMIN' | 'PROFESSOR' | 'ALUNO') => {
@@ -76,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         usuario,
         token,
         isLoading,
-        isAuthenticated: !!token && !!usuario,
+        isAuthenticated,
         login,
         logout,
         hasRole,
