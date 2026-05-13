@@ -8,6 +8,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, senha: string, lembrar?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  hasRole: (role: 'ADMIN' | 'PROFESSOR' | 'ALUNO') => boolean;
+  canUpload: () => boolean;
+  canManageUsers: () => boolean;
+  canManageVideos: () => boolean;
+  canModerate: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,16 +50,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    try {
-      setIsLoading(true);
-      await api.auth.logout();
-    } finally {
-      setToken(null);
-      setUsuario(null);
-      api.clearAuth();
-      setIsLoading(false);
-    }
+  const hasRole = (role: 'ADMIN' | 'PROFESSOR' | 'ALUNO') => {
+    return usuario?.perfil === role;
+  };
+
+  const canUpload = () => {
+    return isAuthenticated && (hasRole('ADMIN') || hasRole('PROFESSOR'));
+  };
+
+  const canManageUsers = () => {
+    return hasRole('ADMIN');
+  };
+
+  const canManageVideos = () => {
+    return hasRole('ADMIN') || hasRole('PROFESSOR');
+  };
+
+  const canModerate = () => {
+    return hasRole('ADMIN');
   };
 
   return (
@@ -66,6 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token && !!usuario,
         login,
         logout,
+        hasRole,
+        canUpload,
+        canManageUsers,
+        canManageVideos,
+        canModerate,
       }}
     >
       {children}

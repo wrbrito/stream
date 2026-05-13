@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Sun, Moon, Upload, Bell, User, LogOut, Video, Check } from 'lucide-react';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import { NotificationsProvider, useNotifications } from '../contexts/NotificationsContext';
+import { ErrorProvider } from '../contexts/ErrorContext';
 
 import { Login } from './components/Login';
 import { Home } from './components/Home';
@@ -20,7 +19,7 @@ function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { isAuthenticated, isLoading, logout, usuario } = useAuth();
+  const { isAuthenticated, isLoading, logout, usuario, canUpload, canManageUsers } = useAuth();
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -118,7 +117,7 @@ function AppContent() {
   };
 
   const handleAdminClick = () => {
-    if (usuario?.perfil === 'ADMIN') {
+    if (canManageUsers()) {
       setCurrentScreen('admin');
     } else {
       setCurrentScreen('profile');
@@ -195,7 +194,7 @@ function AppContent() {
 
           {/* Ícones lado direito */}
           <div className="flex items-center gap-2">
-            {(usuario?.perfil === 'ADMIN' || usuario?.perfil === 'PROFESSOR') && (
+            {(canUpload()) && (
               <Button variant="outline" onClick={handleUploadClick} title="Enviar vídeo" className="hidden md:flex gap-2 rounded-xl border-border/60">
                 <Upload className="w-4 h-4" />
                 <span className="font-semibold">Enviar Vídeo</span>
@@ -260,7 +259,7 @@ function AppContent() {
             </Button>
 
             {isAuthenticated ? (
-              <Button variant="ghost" size="icon" onClick={handleAdminClick} title={usuario?.perfil === 'ADMIN' ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
+              <Button variant="ghost" size="icon" onClick={handleAdminClick} title={canManageUsers() ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform hover:scale-110">
                   <User className="w-5 h-5" />
                 </div>
@@ -372,11 +371,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NotificationsProvider>
-        <AppContent />
-      </NotificationsProvider>
-    </AuthProvider>
+    <ErrorProvider>
+      <AuthProvider>
+        <NotificationsProvider>
+          <AppContent />
+        </NotificationsProvider>
+      </AuthProvider>
+    </ErrorProvider>
   );
 }
 
