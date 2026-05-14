@@ -14,6 +14,7 @@ const allowedOrigins = new Set([
   'http://192.168.90.140:5173',
   'http://192.168.90.140:5174',
   'http://192.168.25.253:5173',
+  'http://192.168.16.95:5173',
   env.APP_URL,
   // adiciona o origin usado no erro do navegador
   'http://damastube:5173',
