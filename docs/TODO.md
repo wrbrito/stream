@@ -243,7 +243,7 @@
 # PENDENCIAS
 
 - [ ] permitir admin escolher a quantidade de vídeos em destaque e a quantidade de vídeos relacionados - IMPLEMENTADO
-- [ ] os videos da lateral direita não estão funcionais, as previas (thumb) não estão aparecendo...
+- [x] os videos da lateral direita não estão funcionais, as previas (thumb) não estão aparecendo... - CORRIGIDO
 - [ ] antes da importação do video é que deve ser feita a escolha da qualidade - IMPLEMENTADO
 - [ ] em assistir video, no lado direito poderia ser exibido os icones/cards de videos relacionados - IMPLEMENTADO
 - [ ] adicionar um "load" quando for fazer a importação do video para o servidor interno...

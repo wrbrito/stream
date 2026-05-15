@@ -108,6 +108,7 @@ function AppContent() {
     const url = new URL(window.location.href);
     url.searchParams.set('videoId', String(videoId));
     window.history.replaceState(null, '', url.toString());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToHome = () => {
