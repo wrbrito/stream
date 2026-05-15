@@ -69,7 +69,7 @@ const fallbackThumbnail =
 const metaEnv = (import.meta as any).env as { VITE_API_URL?: string } | undefined;
 const BASE_URL = metaEnv?.VITE_API_URL
   ? metaEnv.VITE_API_URL.replace('/api', '')
-  : 'http://localhost:4000';
+  : `${window.location.protocol}//${window.location.hostname}:4000`;
 
 function extrairYoutubeId(url?: string | null): string | null {
   if (!url) {
