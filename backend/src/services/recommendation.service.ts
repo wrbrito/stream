@@ -143,15 +143,24 @@ export const RecommendationService = {
     const currentVideo = await RecommendationRepository.buscarVideoBase(videoId);
     if (!currentVideo) return { videos: [], total: 0, pagina, limite };
 
-    const tagIds = currentVideo.tags.map((t: { id: number }) => t.id);
+    const tagIds = (currentVideo.tags || [])
+      .map((t: { id: number }) => t.id)
+      .filter((id: number) => Number.isFinite(id));
 
-    // 2. Buscar candidatos relacionados
+    const categoriaId = Number.isFinite((currentVideo as any).categoriaId)
+      ? (currentVideo as any).categoriaId
+      : null;
+
+    // 2. Buscar candidatos relacionados com fallback robusto
+    // - Se tagIds estiver vazio, não travar a busca com OR de tags.
+    // - Se categoriaId estiver ausente, a busca pode funcionar via tags.
     const candidatos = await RecommendationRepository.buscarRelacionados(
       videoId,
-      currentVideo.categoriaId,
+      categoriaId,
       tagIds,
       100
     );
+
 
     // 3. Score híbrido simplificado para relacionados (mantém regras principais)
     const scored = candidatos.map((video: any) => {

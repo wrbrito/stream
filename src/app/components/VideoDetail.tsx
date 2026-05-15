@@ -109,9 +109,11 @@ function obterThumbnailUrl(video: ApiVideo): string | null {
 // Construir URL base dinamicamente baseada no host atual
 const getBaseUrl = (): string => {
   // Se houver variável de ambiente definida, usar ela
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace('/api', '');
+  const apiUrl = (import.meta as any)?.env?.VITE_API_URL as string | undefined;
+  if (apiUrl) {
+    return apiUrl.replace('/api', '');
   }
+
 
   // Caso contrário, usar o host/porta do navegador
   const protocol = window.location.protocol;
@@ -211,12 +213,19 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
           if (avaliacoesResp.status === 'fulfilled') {
             setStatsAvaliacao((avaliacoesResp.value.dados as any) || { media: 0, total: 0, minhaNota: null });
           }
+
           if (relatedResp.status === 'fulfilled') {
             const relatedDados = relatedResp.value.dados as { videos: ApiVideo[]; total?: number } | { videos: ApiVideo[] } | any;
             const relatedLista = relatedDados?.videos ?? [];
             setRelatedVideos(relatedLista.filter((item: ApiVideo) => item.id !== videoId));
+          } else {
+            console.warn('[RelatedVideos] Falha ao carregar relacionados:', {
+              videoId,
+              reason: (relatedResp as any).reason,
+            });
           }
         }
+
       } catch (erro) {
         if (ativo) {
           setError(tratarErroApi(erro));
@@ -380,7 +389,8 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
     try {
       setEnviandoComentario(true);
       const response = await api.comentarios.criar(videoId, comentarioTexto.trim());
-      setComentarios((prev) => [response.dados, ...prev]);
+      setComentarios((prev) => [response.dados as Comentario, ...prev]);
+
       setComentarioTexto('');
     } catch (erro) {
       alert(tratarErroApi(erro));

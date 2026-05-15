@@ -169,24 +169,36 @@ export const RecommendationRepository = {
   /**
    * Busca relacionados por categoria e tags.
    */
-  buscarRelacionados: async (videoId: number, categoriaId: number, tagIds: number[], limite: number) => {
+  buscarRelacionados: async (videoId: number, categoriaId: number | null, tagIds: number[], limite: number) => {
+    const orConditions: any[] = [];
+
+    // Categoria (se existir)
+    if (Number.isFinite(categoriaId)) {
+      orConditions.push({ categoriaId });
+    }
+
+    // Tags (se existirem)
+    if (Array.isArray(tagIds) && tagIds.length > 0) {
+      orConditions.push({
+        tags: {
+          some: { id: { in: tagIds } },
+        },
+      });
+    }
+
+    // Fallback final: se não houver categoria nem tags, não tentar filtros impossíveis
+    // Retorna lista vazia para evitar retornar uma query sem critério de similaridade.
+    if (orConditions.length === 0) {
+      return [];
+    }
+
     return prisma.video.findMany({
       where: {
         id: { not: videoId },
         status: { in: ['ATIVO', 'PUBLICADO'] },
-        OR: [
-          { categoriaId },
-          ...(tagIds.length
-            ? [
-                {
-                  tags: {
-                    some: { id: { in: tagIds } },
-                  },
-                },
-              ]
-            : []),
-        ],
+        OR: orConditions,
       },
+
       select: {
         id: true,
         titulo: true,
