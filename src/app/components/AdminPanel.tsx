@@ -556,6 +556,83 @@ export function AdminPanel({ onBack, onUploadClick, onNotificationsClick, search
     await carregarDados();
   }
 
+  async function handleToggleUserStatus(id: number, ativo: boolean) {
+    try {
+      if (ativo) {
+        await api.usuarios.desativar(id);
+      } else {
+        await api.usuarios.ativar(id);
+      }
+      await carregarDados();
+    } catch (erro) {
+      setError(tratarErroApi(erro));
+    }
+  }
+
+  async function handleToggleComentarios(id: number, podeComentar: boolean) {
+    try {
+      if (podeComentar) {
+        await api.usuarios.bloquearComentarios(id);
+      } else {
+        await api.usuarios.desbloquearComentarios(id);
+      }
+      await carregarDados();
+    } catch (erro) {
+      setError(tratarErroApi(erro));
+    }
+  }
+
+  async function handleDeletarUsuario(id: number) {
+    const confirmado = window.confirm('Excluir este usuário?');
+    if (!confirmado) return;
+    try {
+      await api.usuarios.deletar(id);
+      await carregarDados();
+    } catch (erro) {
+      setError(tratarErroApi(erro));
+    }
+  }
+
+  async function handleDeletarCategoria(id: number) {
+    const confirmado = window.confirm('Excluir esta categoria?');
+    if (!confirmado) return;
+    try {
+      await api.categorias.deletar(id);
+      await carregarDados();
+    } catch (erro) {
+      setError(tratarErroApi(erro));
+    }
+  }
+
+  async function handleSaveComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCommentId) return;
+    try {
+      await api.admin.atualizarComentario(editingCommentId, editingCommentText);
+      setEditingCommentId(null);
+      setEditingCommentText('');
+      await carregarDados();
+    } catch (erro) {
+      setError(tratarErroApi(erro));
+    }
+  }
+
+  function handleStartEditComment(comentario: AdminComentario) {
+    setEditingCommentId(comentario.id);
+    setEditingCommentText(comentario.texto || '');
+  }
+
+  async function handleDeleteComment(id: number) {
+    const confirmado = window.confirm('Excluir este comentário?');
+    if (!confirmado) return;
+    try {
+      await api.admin.deletarComentario(id);
+      await carregarDados();
+    } catch (erro) {
+      setError(tratarErroApi(erro));
+    }
+  }
+
 
 
     const totalPaginas = Math.ceil(totalItens / limite);
