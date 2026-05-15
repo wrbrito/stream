@@ -72,6 +72,7 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
   const [aba, setAba] = useState<Aba>('dados');
   const [nome, setNome] = useState(usuario?.nome ?? '');
   const [fotoPerfil, setFotoPerfil] = useState(usuario?.fotoPerfil ?? '');
+  const [arquivoFoto, setArquivoFoto] = useState<File | null>(null);
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -121,7 +122,11 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
       setMensagem('');
       setErro('');
       await api.profile.atualizar({ nome });
-      if (fotoPerfil.trim()) {
+      if (arquivoFoto) {
+        const formData = new FormData();
+        formData.append('foto', arquivoFoto);
+        await api.profile.atualizarFoto(formData);
+      } else if (fotoPerfil.trim()) {
         await api.profile.atualizarFoto({ fotoPerfil: fotoPerfil.trim() });
       }
       setMensagem('Perfil atualizado com sucesso. Entre novamente para atualizar os dados no cabeçalho.');
@@ -152,9 +157,11 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
 
   if (!usuario) return null;
 
-  const fotoCompleta = fotoPerfil
-    ? fotoPerfil.startsWith('/') ? `${BASE_URL}${fotoPerfil}` : fotoPerfil
-    : '';
+  const fotoCompleta = arquivoFoto 
+    ? URL.createObjectURL(arquivoFoto)
+    : fotoPerfil
+      ? fotoPerfil.startsWith('/') ? `${BASE_URL}${fotoPerfil}` : fotoPerfil
+      : '';
 
   function ListaVideos({ videos }: { videos: ApiVideo[] }) {
     if (loadingListas) {
@@ -249,9 +256,29 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
 
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <User className="w-4 h-4 text-muted-foreground" />
-                URL da foto
+                Foto de Perfil (Arquivo ou URL)
               </label>
-              <Input value={fotoPerfil} onChange={(e) => setFotoPerfil(e.target.value)} placeholder="https://..." />
+              <div className="flex flex-col gap-2">
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setArquivoFoto(e.target.files[0]);
+                      setFotoPerfil('');
+                    }
+                  }} 
+                />
+                <div className="text-center text-sm text-muted-foreground">ou</div>
+                <Input 
+                  value={fotoPerfil} 
+                  onChange={(e) => {
+                    setFotoPerfil(e.target.value);
+                    if (e.target.value) setArquivoFoto(null);
+                  }} 
+                  placeholder="URL da foto (https://...)" 
+                />
+              </div>
 
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Shield className="w-4 h-4 text-muted-foreground" />
