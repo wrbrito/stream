@@ -26,6 +26,7 @@ export const AuthService = {
         nome: usuario.nome,
         email: usuario.email,
         perfil: usuario.perfil,
+        fotoPerfil: usuario.fotoPerfil,
       },
       token,
     };

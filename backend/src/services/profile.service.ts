@@ -30,11 +30,37 @@ export const ProfileService = {
     if (dados.nome !== undefined) updates.nome = dados.nome;
     if (dados.fotoPerfil !== undefined) updates.fotoPerfil = dados.fotoPerfil;
 
-    return UsuarioRepository.atualizar(usuarioId, updates);
+    return prisma.usuario.update({
+      where: { id: usuarioId },
+      data: updates,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        perfil: true,
+        ativo: true,
+        podeComentar: true,
+        fotoPerfil: true,
+        criadoEm: true,
+      },
+    });
   },
 
   atualizarFoto: async (usuarioId: number, fotoPerfil: string) => {
-    return UsuarioRepository.atualizar(usuarioId, { fotoPerfil });
+    return prisma.usuario.update({
+      where: { id: usuarioId },
+      data: { fotoPerfil },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        perfil: true,
+        ativo: true,
+        podeComentar: true,
+        fotoPerfil: true,
+        criadoEm: true,
+      },
+    });
   },
 
   trocarSenha: async (usuarioId: number, senhaAtual: string, novaSenha: string, confirmarSenha: string) => {
