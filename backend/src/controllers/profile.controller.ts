@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs/promises';
 import { ProfileService } from '../services/profile.service.js';
+import { env } from '../lib/env.js';
 
 export const ProfileController = {
   obter: async (req: Request, res: Response) => {
@@ -24,12 +27,31 @@ export const ProfileController = {
 
   atualizarFoto: async (req: Request, res: Response) => {
     try {
-      const fotoUrl = req.file ? `/uploads/fotos/${req.file.filename}` : req.body.fotoPerfil;
+      const usuarioId = req.usuario!.id;
+
+      // Monta URL da nova foto (upload de arquivo ou URL externa)
+      const fotoUrl = req.file
+        ? `/uploads/fotos/usuarios/${usuarioId}/${req.file.filename}`
+        : req.body.fotoPerfil;
+
       if (!fotoUrl) {
         return res.status(400).json({ sucesso: false, erro: 'Envie uma imagem ou URL de foto' });
       }
 
-      const perfil = await ProfileService.atualizarFoto(req.usuario!.id, fotoUrl);
+      // Busca e deleta foto antiga do disco (somente se for arquivo local)
+      const perfilAtual = await ProfileService.obter(usuarioId);
+      if (perfilAtual.fotoPerfil && perfilAtual.fotoPerfil.startsWith('/uploads/fotos/')) {
+        const caminhoAntigo = path.resolve(
+          process.cwd(),
+          env.UPLOAD_DIRECTORY,
+          perfilAtual.fotoPerfil.replace('/uploads/', '')
+        );
+        await fs.unlink(caminhoAntigo).catch(() => {
+          // Ignora erro caso arquivo já tenha sido removido
+        });
+      }
+
+      const perfil = await ProfileService.atualizarFoto(usuarioId, fotoUrl);
       return res.json({ sucesso: true, dados: perfil });
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : 'Erro ao atualizar foto';

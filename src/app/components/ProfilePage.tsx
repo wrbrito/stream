@@ -68,7 +68,7 @@ function normalizarVideo(video: ApiVideo) {
 }
 
 export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
-  const { usuario } = useAuth();
+  const { usuario, atualizarUsuario } = useAuth();
   const [aba, setAba] = useState<Aba>('dados');
   const [nome, setNome] = useState(usuario?.nome ?? '');
   const [fotoPerfil, setFotoPerfil] = useState(usuario?.fotoPerfil ?? '');
@@ -121,15 +121,31 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
       setSalvando(true);
       setMensagem('');
       setErro('');
+
+      // Salva nome e demais dados pessoais
       await api.profile.atualizar({ nome });
+
+      let novaFotoPerfil: string | undefined;
       if (arquivoFoto) {
         const formData = new FormData();
         formData.append('foto', arquivoFoto);
-        await api.profile.atualizarFoto(formData);
+        const resp = await api.profile.atualizarFoto(formData);
+        const perfilAtualizado = resp.dados as { fotoPerfil?: string };
+        novaFotoPerfil = perfilAtualizado?.fotoPerfil;
       } else if (fotoPerfil.trim()) {
-        await api.profile.atualizarFoto({ fotoPerfil: fotoPerfil.trim() });
+        const resp = await api.profile.atualizarFoto({ fotoPerfil: fotoPerfil.trim() });
+        const perfilAtualizado = resp.dados as { fotoPerfil?: string };
+        novaFotoPerfil = perfilAtualizado?.fotoPerfil;
       }
-      setMensagem('Perfil atualizado com sucesso. Entre novamente para atualizar os dados no cabeçalho.');
+
+      // Atualiza o contexto de autenticação para refletir imediatamente no Header
+      atualizarUsuario({
+        nome,
+        ...(novaFotoPerfil !== undefined ? { fotoPerfil: novaFotoPerfil } : {}),
+      });
+      if (novaFotoPerfil) setFotoPerfil(novaFotoPerfil);
+      setArquivoFoto(null);
+      setMensagem('Perfil atualizado com sucesso!');
     } catch (err) {
       setErro(tratarErroApi(err));
     } finally {

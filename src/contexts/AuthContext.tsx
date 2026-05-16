@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, senha: string, lembrar?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  atualizarUsuario: (dados: Partial<AuthPayload['usuario']>) => void;
   hasRole: (role: 'ADMIN' | 'PROFESSOR' | 'ALUNO') => boolean;
   canUpload: () => boolean;
   canManageUsers: () => boolean;
@@ -58,6 +59,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(null);
   };
 
+  const atualizarUsuario = (dados: Partial<AuthPayload['usuario']>) => {
+    setUsuario((atual) => {
+      if (!atual) return atual;
+      const atualizado = { ...atual, ...dados };
+      // Persiste no mesmo storage que foi usado no login
+      const usaLocal = !!localStorage.getItem('auth_token');
+      api.setUsuario(atualizado, usaLocal);
+      return atualizado;
+    });
+  };
+
   const hasRole = (role: 'ADMIN' | 'PROFESSOR' | 'ALUNO') => {
     return usuario?.perfil === role;
   };
@@ -87,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         login,
         logout,
+        atualizarUsuario,
         hasRole,
         canUpload,
         canManageUsers,
