@@ -25,6 +25,7 @@ export function Header({
   canManageUsers,
   setCurrentScreen,
   handleLogout,
+  usuario,
 }: any) {
   return (
     <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
