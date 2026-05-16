@@ -392,16 +392,10 @@ export const api = {
         body: JSON.stringify(dados),
       });
     },
-    atualizarFoto: async (dados: FormData | { fotoPerfil: string }) => {
-      if (dados instanceof FormData) {
-        return api.fetch('/profile/foto', {
-          method: 'POST',
-          body: dados,
-        });
-      }
+    atualizarFoto: async (fotoPerfil: string) => {
       return api.fetch('/profile/foto', {
         method: 'POST',
-        body: JSON.stringify(dados),
+        body: JSON.stringify({ fotoPerfil }),
       });
     },
     trocarSenha: async (dados: { senhaAtual: string; novaSenha: string; confirmarSenha: string }) => {

@@ -134,8 +134,13 @@ export function Header({
 
           {isAuthenticated ? (
             <Button variant="ghost" size="icon" onClick={handleAdminClick} title={canManageUsers() ? 'Administração' : 'Meu Perfil'} className="rounded-xl">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform hover:scale-110">
-                <User className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-full bg-primary overflow-hidden flex items-center justify-center text-primary-foreground text-sm font-bold transition-transform hover:scale-110 ring-2 ring-transparent hover:ring-primary/40">
+                {usuario?.fotoPerfil
+                  ? <img src={usuario.fotoPerfil} alt={usuario.nome} className="w-full h-full object-cover" />
+                  : usuario?.nome
+                    ? <span>{usuario.nome[0].toUpperCase()}</span>
+                    : <User className="w-5 h-5" />
+                }
               </div>
             </Button>
           ) : (

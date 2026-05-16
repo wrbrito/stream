@@ -1,8 +1,5 @@
 import { Request, Response } from 'express';
-import path from 'path';
-import fs from 'fs/promises';
 import { ProfileService } from '../services/profile.service.js';
-import { env } from '../lib/env.js';
 
 export const ProfileController = {
   obter: async (req: Request, res: Response) => {
@@ -27,31 +24,21 @@ export const ProfileController = {
 
   atualizarFoto: async (req: Request, res: Response) => {
     try {
-      const usuarioId = req.usuario!.id;
+      const { fotoPerfil } = req.body as { fotoPerfil?: string };
 
-      // Monta URL da nova foto (upload de arquivo ou URL externa)
-      const fotoUrl = req.file
-        ? `/uploads/fotos/usuarios/${usuarioId}/${req.file.filename}`
-        : req.body.fotoPerfil;
-
-      if (!fotoUrl) {
-        return res.status(400).json({ sucesso: false, erro: 'Envie uma imagem ou URL de foto' });
+      if (!fotoPerfil || typeof fotoPerfil !== 'string' || !fotoPerfil.trim()) {
+        return res.status(400).json({ sucesso: false, erro: 'Envie uma imagem em base64 ou uma URL válida' });
       }
 
-      // Busca e deleta foto antiga do disco (somente se for arquivo local)
-      const perfilAtual = await ProfileService.obter(usuarioId);
-      if (perfilAtual.fotoPerfil && perfilAtual.fotoPerfil.startsWith('/uploads/fotos/')) {
-        const caminhoAntigo = path.resolve(
-          process.cwd(),
-          env.UPLOAD_DIRECTORY,
-          perfilAtual.fotoPerfil.replace('/uploads/', '')
-        );
-        await fs.unlink(caminhoAntigo).catch(() => {
-          // Ignora erro caso arquivo já tenha sido removido
-        });
+      // Validação básica: deve ser URL ou base64
+      const ehUrl = fotoPerfil.startsWith('http://') || fotoPerfil.startsWith('https://');
+      const ehBase64 = fotoPerfil.startsWith('data:image/');
+
+      if (!ehUrl && !ehBase64) {
+        return res.status(400).json({ sucesso: false, erro: 'Formato inválido. Use uma URL ou imagem base64.' });
       }
 
-      const perfil = await ProfileService.atualizarFoto(usuarioId, fotoUrl);
+      const perfil = await ProfileService.atualizarFoto(req.usuario!.id, fotoPerfil.trim());
       return res.json({ sucesso: true, dados: perfil });
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : 'Erro ao atualizar foto';

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Heart, Loader2, Mail, MessageSquare, Save, Shield, Star, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Camera, Heart, Loader2, Mail, MessageSquare, Save, Shield, Star, User, X } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
 import { VideoCard } from './VideoCard';
@@ -34,6 +34,7 @@ interface ItemComVideo {
 
 const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:4000';
 const fallbackThumbnail = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600';
+const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 
 function extrairYoutubeId(url?: string | null): string | null {
   if (!url) return null;
@@ -67,12 +68,51 @@ function normalizarVideo(video: ApiVideo) {
   };
 }
 
+/** Converte File para string base64 (data:image/...) */
+function fileParaBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Redimensiona e comprime imagem via canvas antes de converter para base64 */
+function redimensionarImagem(file: File, maxWidth = 256, maxHeight = 256, qualidade = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Canvas não suportado'));
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', qualidade));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
   const { usuario, atualizarUsuario } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [aba, setAba] = useState<Aba>('dados');
   const [nome, setNome] = useState(usuario?.nome ?? '');
   const [fotoPerfil, setFotoPerfil] = useState(usuario?.fotoPerfil ?? '');
-  const [arquivoFoto, setArquivoFoto] = useState<File | null>(null);
+  // preview local antes de salvar (base64 do arquivo escolhido)
+  const [previewBase64, setPreviewBase64] = useState<string>('');
+  const [urlFoto, setUrlFoto] = useState('');
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -86,7 +126,6 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
 
   useEffect(() => {
     let ativo = true;
-
     async function carregarListas() {
       try {
         setLoadingListas(true);
@@ -95,7 +134,6 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
           api.profile.listarAvaliacoes(),
           api.profile.listarComentarios(),
         ]);
-
         if (!ativo) return;
         setFavoritos((favoritosResp.dados as ApiVideo[] | undefined) ?? []);
         setAvaliados((avaliadosResp.dados as ItemComVideo[] | undefined) ?? []);
@@ -106,12 +144,35 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
         if (ativo) setLoadingListas(false);
       }
     }
-
     carregarListas();
-    return () => {
-      ativo = false;
-    };
+    return () => { ativo = false; };
   }, []);
+
+  const handleSelecionarArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErro('Selecione um arquivo de imagem válido.');
+      return;
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setErro('A imagem deve ter no máximo 2 MB.');
+      return;
+    }
+
+    setErro('');
+    setUrlFoto('');
+    try {
+      // Redimensiona para 256x256 máx antes de gerar o base64
+      const base64 = await redimensionarImagem(file);
+      setPreviewBase64(base64);
+    } catch {
+      // fallback: usa FileReader diretamente sem redimensionar
+      const base64 = await fileParaBase64(file);
+      setPreviewBase64(base64);
+    }
+  };
 
   const handleSalvarDados = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,29 +183,28 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
       setMensagem('');
       setErro('');
 
-      // Salva nome e demais dados pessoais
+      // Salva nome
       await api.profile.atualizar({ nome });
 
+      // Determina qual foto enviar: arquivo (base64) > URL > mantém atual
       let novaFotoPerfil: string | undefined;
-      if (arquivoFoto) {
-        const formData = new FormData();
-        formData.append('foto', arquivoFoto);
-        const resp = await api.profile.atualizarFoto(formData);
-        const perfilAtualizado = resp.dados as { fotoPerfil?: string };
-        novaFotoPerfil = perfilAtualizado?.fotoPerfil;
-      } else if (fotoPerfil.trim()) {
-        const resp = await api.profile.atualizarFoto({ fotoPerfil: fotoPerfil.trim() });
+      const fotoParaEnviar = previewBase64 || urlFoto.trim();
+
+      if (fotoParaEnviar) {
+        const resp = await api.profile.atualizarFoto(fotoParaEnviar);
         const perfilAtualizado = resp.dados as { fotoPerfil?: string };
         novaFotoPerfil = perfilAtualizado?.fotoPerfil;
       }
 
-      // Atualiza o contexto de autenticação para refletir imediatamente no Header
+      // Atualiza o contexto de autenticação → reflete imediatamente no Header
       atualizarUsuario({
         nome,
         ...(novaFotoPerfil !== undefined ? { fotoPerfil: novaFotoPerfil } : {}),
       });
+
       if (novaFotoPerfil) setFotoPerfil(novaFotoPerfil);
-      setArquivoFoto(null);
+      setPreviewBase64('');
+      setUrlFoto('');
       setMensagem('Perfil atualizado com sucesso!');
     } catch (err) {
       setErro(tratarErroApi(err));
@@ -171,21 +231,20 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
     }
   };
 
+  const limparFoto = () => {
+    setPreviewBase64('');
+    setUrlFoto('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   if (!usuario) return null;
 
-  const fotoCompleta = arquivoFoto 
-    ? URL.createObjectURL(arquivoFoto)
-    : fotoPerfil
-      ? fotoPerfil.startsWith('/') ? `${BASE_URL}${fotoPerfil}` : fotoPerfil
-      : '';
+  // Ordem de prioridade para exibição: preview local > salva no perfil > nada
+  const fotoExibida = previewBase64 || fotoPerfil || '';
 
   function ListaVideos({ videos }: { videos: ApiVideo[] }) {
-    if (loadingListas) {
-      return <div className="p-6 text-sm text-muted-foreground">Carregando...</div>;
-    }
-    if (videos.length === 0) {
-      return <div className="p-6 text-sm text-muted-foreground">Nenhum vídeo encontrado nesta lista.</div>;
-    }
+    if (loadingListas) return <div className="p-6 text-sm text-muted-foreground">Carregando...</div>;
+    if (videos.length === 0) return <div className="p-6 text-sm text-muted-foreground">Nenhum vídeo encontrado nesta lista.</div>;
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {videos.map((video) => {
@@ -219,10 +278,14 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Cabeçalho do perfil */}
         <div className="bg-card border border-border rounded-xl shadow-sm p-6 mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-primary rounded-full overflow-hidden flex items-center justify-center text-primary-foreground text-2xl font-bold">
-              {fotoCompleta ? <img src={fotoCompleta} alt={usuario.nome} className="w-full h-full object-cover" /> : usuario.nome[0].toUpperCase()}
+            <div className="w-16 h-16 bg-primary rounded-full overflow-hidden flex items-center justify-center text-primary-foreground text-2xl font-bold flex-shrink-0">
+              {fotoExibida
+                ? <img src={fotoExibida} alt={usuario.nome} className="w-full h-full object-cover" />
+                : <span>{usuario.nome[0].toUpperCase()}</span>
+              }
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
@@ -231,6 +294,7 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
           </div>
         </div>
 
+        {/* Abas */}
         <div className="flex flex-wrap gap-2 mb-6">
           {[
             { id: 'dados' as Aba, label: 'Dados', icon: User },
@@ -258,6 +322,7 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <form onSubmit={handleSalvarDados} className="bg-card border border-border rounded-xl p-6 space-y-4">
               <h2 className="font-semibold text-lg">Dados Pessoais</h2>
+
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <User className="w-4 h-4 text-muted-foreground" />
                 Nome
@@ -270,30 +335,65 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
               </label>
               <Input value={usuario.email} disabled />
 
+              {/* Seção de foto de perfil */}
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <User className="w-4 h-4 text-muted-foreground" />
-                Foto de Perfil (Arquivo ou URL)
+                <Camera className="w-4 h-4 text-muted-foreground" />
+                Foto de Perfil
               </label>
-              <div className="flex flex-col gap-2">
-                <Input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setArquivoFoto(e.target.files[0]);
-                      setFotoPerfil('');
+
+              {/* Preview + botão de escolher */}
+              <div className="flex items-center gap-4">
+                <div className="relative group flex-shrink-0">
+                  <div
+                    className="w-20 h-20 rounded-full bg-primary overflow-hidden flex items-center justify-center text-primary-foreground text-2xl font-bold cursor-pointer ring-2 ring-border hover:ring-primary transition-all"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Clique para escolher uma foto"
+                  >
+                    {fotoExibida
+                      ? <img src={fotoExibida} alt="preview" className="w-full h-full object-cover" />
+                      : <span>{usuario.nome[0].toUpperCase()}</span>
                     }
-                  }} 
-                />
-                <div className="text-center text-sm text-muted-foreground">ou</div>
-                <Input 
-                  value={fotoPerfil} 
-                  onChange={(e) => {
-                    setFotoPerfil(e.target.value);
-                    if (e.target.value) setArquivoFoto(null);
-                  }} 
-                  placeholder="URL da foto (https://...)" 
-                />
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  {(previewBase64 || urlFoto) && (
+                    <button
+                      type="button"
+                      onClick={limparFoto}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+                      title="Remover foto selecionada"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg hover:bg-accent transition-colors text-left text-muted-foreground"
+                  >
+                    {previewBase64 ? '✓ Arquivo selecionado — clique para trocar' : 'Escolher arquivo (JPG, PNG, WEBP · máx. 2 MB)'}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleSelecionarArquivo}
+                  />
+                  <div className="text-center text-xs text-muted-foreground">ou cole uma URL</div>
+                  <Input
+                    value={urlFoto}
+                    onChange={(e) => {
+                      setUrlFoto(e.target.value);
+                      if (e.target.value) setPreviewBase64('');
+                    }}
+                    placeholder="https://..."
+                  />
+                </div>
               </div>
 
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
