@@ -509,6 +509,36 @@ export const api = {
     },
   },
 
+  // ============ Canais ============
+
+  canais: {
+    obter: async (usuarioId: number) => {
+      return api.fetch(`/canais/${usuarioId}`);
+    },
+    listarVideos: async (usuarioId: number, pagina: number = 1, limite: number = 12) => {
+      const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+      return api.fetch(`/canais/${usuarioId}/videos?${params.toString()}`);
+    },
+    obterEstatisticas: async (usuarioId: number) => {
+      return api.fetch(`/canais/${usuarioId}/estatisticas`);
+    },
+    obterMeuCanal: async () => {
+      return api.fetch('/canais/me/info');
+    },
+    atualizarDescricao: async (descricao: string | null) => {
+      return api.fetch('/canais/me/descricao', {
+        method: 'PATCH',
+        body: JSON.stringify({ descricao }),
+      });
+    },
+    atualizarPrivacidade: async (canalPublico: boolean) => {
+      return api.fetch('/canais/me/privacidade', {
+        method: 'PATCH',
+        body: JSON.stringify({ canalPublico }),
+      });
+    },
+  },
+
   configuracoes: {
     publicas: async () => {
       return api.fetch('/configuracoes/publicas');

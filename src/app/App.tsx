@@ -15,13 +15,15 @@ import { Button } from './components/Button';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { ProfilePage } from './components/ProfilePage';
+import { UserChannelPage } from './components/UserChannelPage';
 import { api } from '../services/api';
 
-type Screen = 'login' | 'home' | 'video' | 'upload' | 'admin' | 'notifications' | 'profile';
+type Screen = 'login' | 'home' | 'video' | 'upload' | 'admin' | 'notifications' | 'profile' | 'channel';
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+  const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, isLoading, logout, usuario, canUpload, canManageUsers } = useAuth();
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotifications();
@@ -136,6 +138,12 @@ function AppContent() {
   const handleNotificationsClick = () => {
     setCurrentScreen('notifications');
     setShowNotifications(false);
+  };
+
+  const handleChannelClick = (usuarioId: number) => {
+    setSelectedChannelId(usuarioId);
+    setCurrentScreen('channel');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLogout = () => {
@@ -256,6 +264,13 @@ function AppContent() {
         )}
         {currentScreen === 'profile' && (
           <ProfilePage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
+        )}
+        {currentScreen === 'channel' && selectedChannelId && (
+          <UserChannelPage
+            usuarioId={selectedChannelId}
+            onBack={handleBackToHome}
+            onVideoClick={handleVideoClick}
+          />
         )}
       </main>
       {showFooter && (
