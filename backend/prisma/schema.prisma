@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 // VideoTipo substituído por String
 
 
@@ -26,6 +27,12 @@ model Usuario {
   podeComentar Boolean @default(true)
   fotoPerfil String?
   criadoEm   DateTime  @default(now())
+
+  // Canal: define se os vídeos deste usuário podem ser vistos por outros logados.
+  // Por enquanto, o canal exige login (ver código/rotas). O admin pode definir privado/publico.
+  canalPublico Boolean @default(true)
+  descricaoCanal String? // Descrição/Bio do canal do usuário
+
   videos     Video[]
   visualizacoes Visualizacao[]
   favoritos  Favorito[]
@@ -33,6 +40,7 @@ model Usuario {
   avaliacoes  Avaliacao[]
   notificacoes Notification[]
 }
+
 
 model Categoria {
   id         Int      @id @default(autoincrement())
