@@ -8,6 +8,7 @@ interface VideoCardProps {
   type: 'internal' | 'youtube';
   thumbnail: string;
   onClick?: () => void;
+  onAuthorClick?: () => void;
 }
 
 export function VideoCard({
@@ -18,6 +19,7 @@ export function VideoCard({
   type,
   thumbnail,
   onClick,
+  onAuthorClick,
 }: VideoCardProps) {
   return (
     <div
@@ -51,8 +53,22 @@ export function VideoCard({
         <h3 className="font-medium text-foreground line-clamp-2 mb-2">
           {title}
         </h3>
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span className="truncate">{author}</span>
+        <div className="flex items-center justify-between text-sm text-muted-foreground font-medium">
+          <span
+            onClick={(e) => {
+              if (onAuthorClick) {
+                e.stopPropagation();
+                onAuthorClick();
+              }
+            }}
+            className={`truncate ${
+              onAuthorClick
+                ? 'hover:text-primary hover:underline cursor-pointer transition-colors duration-200'
+                : ''
+            }`}
+          >
+            {author}
+          </span>
           <div className="flex items-center gap-1">
             <Eye className="w-4 h-4" />
             <span>{views}</span>

@@ -5,7 +5,8 @@ export function RelatedVideos({
   onVideoClick,
   obterThumbnailUrl,
   contarVisualizacoes,
-  usuario
+  usuario,
+  onChannelClick
 }: any) {
   return (
     <div className="bg-card rounded-xl border border-border p-6 shadow-sm sticky top-24 space-y-6">
@@ -49,7 +50,19 @@ export function RelatedVideos({
                     <h4 className="font-medium text-sm text-foreground line-clamp-2 mb-1">
                       {relatedVideo.titulo}
                     </h4>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+                      onClick={(e) => {
+                        if (relatedVideo.uploaderId && onChannelClick) {
+                          e.stopPropagation();
+                          onChannelClick(relatedVideo.uploaderId);
+                        }
+                      }}
+                      className={`text-xs text-muted-foreground ${
+                        relatedVideo.uploaderId && onChannelClick
+                          ? 'hover:text-primary hover:underline cursor-pointer transition-colors duration-200'
+                          : ''
+                      }`}
+                    >
                       {relatedVideo.autor}
                     </p>
                     <div className="flex items-center gap-1 mt-1">

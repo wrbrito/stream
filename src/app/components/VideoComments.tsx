@@ -15,7 +15,8 @@ export function VideoComments({
   setRespondendoId,
   respostaTexto,
   setRespostaTexto,
-  handleEnviarResposta
+  handleEnviarResposta,
+  onChannelClick
 }: any) {
   return (
     <div className="mt-12">
@@ -50,13 +51,25 @@ export function VideoComments({
       <div className="space-y-6">
         {comentarios.map((comentario: any) => (
           <div key={comentario.id} className="flex gap-4 group">
-            <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground font-bold shrink-0">
+            <div
+              onClick={() => onChannelClick?.(comentario.usuarioId)}
+              className={`w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground font-bold shrink-0 ${
+                onChannelClick ? 'cursor-pointer hover:bg-muted/80 transition-colors' : ''
+              }`}
+            >
               {comentario.usuario.nome[0]}
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm">{comentario.usuario.nome}</span>
+                  <span
+                    onClick={() => onChannelClick?.(comentario.usuarioId)}
+                    className={`font-semibold text-sm ${
+                      onChannelClick ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''
+                    }`}
+                  >
+                    {comentario.usuario.nome}
+                  </span>
                   {comentario.usuario.perfil === 'ADMIN' && (
                     <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                       Admin
@@ -116,7 +129,14 @@ export function VideoComments({
                     <div key={resposta.id} className="group/resposta">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">{resposta.usuario.nome}</span>
+                          <span
+                            onClick={() => onChannelClick?.(resposta.usuarioId)}
+                            className={`font-semibold text-sm ${
+                              onChannelClick ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''
+                            }`}
+                          >
+                            {resposta.usuario.nome}
+                          </span>
                           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                             Autor
                           </span>
