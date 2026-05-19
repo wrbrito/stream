@@ -79,15 +79,15 @@ function obterPosicaoMarcaDagua(posicao: PosicaoMarcaDagua) {
 
 async function analisarMidia(arquivo: string): Promise<{ temVideo: boolean; temAudio: boolean; duracao: number | null; isAudioOnly: boolean }> {
   return new Promise((resolve) => {
-    ffmpeg.ffprobe(arquivo, (err, metadata) => {
+    ffmpeg.ffprobe(arquivo, (err: any, metadata: any) => {
       if (err || !metadata) {
         resolve({ temVideo: false, temAudio: false, duracao: null, isAudioOnly: false });
         return;
       }
       // Consideramos apenas vídeos reais (não capas de áudio)
       // Capas de MP3 geralmente são mjpeg e não têm framerate normal
-      const videoStream = metadata.streams.find(s => s.codec_type === 'video');
-      const audioStream = metadata.streams.find(s => s.codec_type === 'audio');
+      const videoStream = metadata.streams.find((s: any) => s.codec_type === 'video');
+      const audioStream = metadata.streams.find((s: any) => s.codec_type === 'audio');
       
       const temVideoReal = videoStream && videoStream.codec_name !== 'mjpeg';
       const temAudio = !!audioStream;
@@ -157,7 +157,7 @@ async function aplicarMarcaDagua(arquivoOriginal: string, arquivoSaida: string, 
         if (onProgress) onProgress(100);
         resolve();
       })
-      .on('error', (err, stdout, stderr) => {
+      .on('error', (err: Error, stdout: string, stderr: string) => {
         console.error('Erro FFmpeg aplicarMarcaDagua:', err.message);
         if (stderr) console.error('FFmpeg stderr:', stderr);
         reject(new Error(`Falha no processamento: ${err.message}`));
@@ -189,7 +189,7 @@ async function gerarMiniatura(arquivoVideo: string, diretorioMiniaturas: string,
         folder: diretorioMiniaturas,
       })
       .on('end', () => resolve(`/uploads/thumbnails/thumb-${nomeArquivo}.png`))
-      .on('error', (err) => {
+      .on('error', (err: Error) => {
           console.warn('Erro ao gerar miniatura:', err.message);
           resolve('');
       });
