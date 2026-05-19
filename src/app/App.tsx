@@ -244,10 +244,11 @@ function AppContent() {
             recommendedCount={recommendedVideosCount}
             showTrending={showTrending}
             trendingCount={trendingVideosCount}
+            onChannelClick={handleChannelClick}
           />
         )}
         {currentScreen === 'video' && selectedVideoId && (
-          <VideoDetail onBack={handleBackToHome} videoId={selectedVideoId} onVideoClick={handleVideoClick} relatedCount={relatedVideosCount} />
+          <VideoDetail onBack={handleBackToHome} videoId={selectedVideoId} onVideoClick={handleVideoClick} relatedCount={relatedVideosCount} onChannelClick={handleChannelClick} />
         )}
         {currentScreen === 'upload' && <UploadVideo onBack={handleBackToHome} />}
         {currentScreen === 'admin' && (
@@ -263,7 +264,7 @@ function AppContent() {
           <NotificationsPage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
         )}
         {currentScreen === 'profile' && (
-          <ProfilePage onBack={handleBackToHome} onVideoClick={handleVideoClick} />
+          <ProfilePage onBack={handleBackToHome} onVideoClick={handleVideoClick} onChannelClick={handleChannelClick} />
         )}
         {currentScreen === 'channel' && selectedChannelId && (
           <UserChannelPage

@@ -19,6 +19,7 @@ interface HomeProps {
   recommendedCount?: number;
   showTrending?: boolean;
   trendingCount?: number;
+  onChannelClick?: (usuarioId: number) => void;
 }
 
 const categories = [
@@ -41,6 +42,7 @@ interface Video {
   visualizacoes: number;
   tipo: 'internal' | 'youtube';
   thumbnail: string;
+  uploaderId?: number;
 }
 
 interface ApiVideo {
@@ -56,6 +58,7 @@ interface ApiVideo {
   };
   visualizacoes?: unknown[] | number;
   viewsCount?: number;
+  uploaderId?: number;
 }
 
 interface VideosListPayload {
@@ -118,10 +121,11 @@ function normalizarVideo(video: ApiVideo): Video {
       if (youtubeId) return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
       return fallbackThumbnail;
     })(),
+    uploaderId: video.uploaderId,
   };
 }
 
-export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories, featuredCount = 4, showRecommended = true, recommendedCount = 10, showTrending = true, trendingCount = 10 }: HomeProps) {
+export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotificationsClick, searchQuery, onSearchQueryChange, showCategories, featuredCount = 4, showRecommended = true, recommendedCount = 10, showTrending = true, trendingCount = 10, onChannelClick }: HomeProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [destaques, setDestaques] = useState<Video[]>([]);
   const [recomendados, setRecomendados] = useState<Video[]>([]);
@@ -325,6 +329,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                   type={video.tipo}
                   thumbnail={video.thumbnail}
                   onClick={() => onVideoClick(video.id)}
+                  onAuthorClick={video.uploaderId && onChannelClick ? () => onChannelClick(video.uploaderId!) : undefined}
                 />
               ))}
             </div>
@@ -347,6 +352,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                       type={video.tipo}
                       thumbnail={video.thumbnail}
                       onClick={() => onVideoClick(video.id)}
+                      onAuthorClick={video.uploaderId && onChannelClick ? () => onChannelClick(video.uploaderId!) : undefined}
                     />
                   ))}
                 </div>
@@ -425,6 +431,7 @@ export function Home({ onVideoClick, onUploadClick, onAdminClick, onNotification
                     type={video.tipo}
                     thumbnail={video.thumbnail}
                     onClick={() => onVideoClick(video.id)}
+                    onAuthorClick={video.uploaderId && onChannelClick ? () => onChannelClick(video.uploaderId!) : undefined}
                   />
                 ))}
               </div>

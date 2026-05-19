@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 interface ProfilePageProps {
   onBack: () => void;
   onVideoClick?: (videoId: number) => void;
+  onChannelClick?: (usuarioId: number) => void;
 }
 
 type Aba = 'dados' | 'favoritos' | 'avaliados' | 'comentados';
@@ -22,6 +23,7 @@ interface ApiVideo {
   miniatura?: string | null;
   categoria?: { id?: number; nome?: string };
   visualizacoes?: unknown[] | number;
+  uploaderId?: number;
 }
 
 interface ItemComVideo {
@@ -65,6 +67,7 @@ function normalizarVideo(video: ApiVideo) {
     thumbnail: video.miniatura
       ? video.miniatura.startsWith('/') ? `${BASE_URL}${video.miniatura}` : video.miniatura
       : youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : fallbackThumbnail,
+    uploaderId: video.uploaderId,
   };
 }
 
@@ -104,7 +107,7 @@ function redimensionarImagem(file: File, maxWidth = 256, maxHeight = 256, qualid
   });
 }
 
-export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
+export function ProfilePage({ onBack, onVideoClick, onChannelClick }: ProfilePageProps) {
   const { usuario, atualizarUsuario } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [aba, setAba] = useState<Aba>('dados');
@@ -259,6 +262,7 @@ export function ProfilePage({ onBack, onVideoClick }: ProfilePageProps) {
               type={item.tipo}
               thumbnail={item.thumbnail}
               onClick={() => onVideoClick?.(item.id)}
+              onAuthorClick={item.uploaderId && onChannelClick ? () => onChannelClick(item.uploaderId!) : undefined}
             />
           );
         })}

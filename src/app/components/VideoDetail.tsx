@@ -12,6 +12,7 @@ interface VideoDetailProps {
   videoId: number;
   onVideoClick?: (videoId: number) => void;
   relatedCount?: number;
+  onChannelClick?: (usuarioId: number) => void;
 }
 
 interface ApiVideo {
@@ -125,7 +126,7 @@ const getBaseUrl = (): string => {
 
 const BASE_URL = getBaseUrl();
 
-export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }: VideoDetailProps) {
+export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4, onChannelClick }: VideoDetailProps) {
   const { usuario } = useAuth();
   const [video, setVideo] = useState<ApiVideo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -665,7 +666,17 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
 
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                  <div
+                    onClick={() => {
+                      const uid = video.uploaderId ?? video.uploader?.id;
+                      if (uid && onChannelClick) onChannelClick(uid);
+                    }}
+                    className={`w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold ${
+                      (video.uploaderId ?? video.uploader?.id) && onChannelClick
+                        ? 'cursor-pointer hover:opacity-80 transition-opacity'
+                        : ''
+                    }`}
+                  >
                     {video.autor
                       .split(' ')
                       .map((n) => n[0])
@@ -673,7 +684,19 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                       .slice(0, 2)}
                   </div>
                   <div>
-                    <h3 className="font-medium text-foreground">{video.autor}</h3>
+                    <h3
+                      onClick={() => {
+                        const uid = video.uploaderId ?? video.uploader?.id;
+                        if (uid && onChannelClick) onChannelClick(uid);
+                      }}
+                      className={`font-medium text-foreground ${
+                        (video.uploaderId ?? video.uploader?.id) && onChannelClick
+                          ? 'cursor-pointer hover:text-primary hover:underline transition-colors'
+                          : ''
+                      }`}
+                    >
+                      {video.autor}
+                    </h3>
                     <p className="text-sm text-muted-foreground">Autor do video</p>
                   </div>
                 </div>
@@ -738,6 +761,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
                 respostaTexto={respostaTexto}
                 setRespostaTexto={setRespostaTexto}
                 handleEnviarResposta={handleEnviarResposta}
+                onChannelClick={onChannelClick}
               />
             </div>
           </div>
@@ -749,6 +773,7 @@ export function VideoDetail({ onBack, videoId, onVideoClick, relatedCount = 4 }:
               obterThumbnailUrl={obterThumbnailUrl}
               contarVisualizacoes={contarVisualizacoes}
               usuario={usuario}
+              onChannelClick={onChannelClick}
             />
           </aside>        </div>
       </main>
