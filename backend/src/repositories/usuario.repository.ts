@@ -2,8 +2,10 @@ import { prisma } from '../lib/prisma.js';
 
 export const UsuarioRepository = {
   buscarPorEmail: async (email: string) => {
-    return prisma.usuario.findUnique({ where: { email } });
+    const emailNormalizado = email.trim().toLowerCase();
+    return prisma.usuario.findUnique({ where: { email: emailNormalizado } });
   },
+
 
   buscarPorId: async (id: number) => {
     return prisma.usuario.findUnique({ where: { id } });
@@ -41,17 +43,29 @@ export const UsuarioRepository = {
     ativo?: boolean;
     podeComentar?: boolean;
   }) => {
+    const emailNormalizado = dados.email.trim().toLowerCase();
     return prisma.usuario.create({
-      data: dados,
+      data: {
+        ...dados,
+        email: emailNormalizado,
+      },
     });
   },
 
+
   atualizar: async (id: number, dados: Partial<Record<string, unknown>>) => {
+    const dadosAtualizados: Partial<Record<string, unknown>> = { ...dados };
+
+    if (typeof dadosAtualizados.email === 'string') {
+      dadosAtualizados.email = dadosAtualizados.email.trim().toLowerCase();
+    }
+
     return prisma.usuario.update({
       where: { id },
-      data: dados,
+      data: dadosAtualizados,
     });
   },
+
 
   deletar: async (id: number) => {
     const admin = await prisma.usuario.findFirst({
